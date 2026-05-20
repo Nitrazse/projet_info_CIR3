@@ -1,0 +1,70 @@
+/* Layout principal : header fixe + sidebar + zone de contenu */
+.layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.layout__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 1.5rem;
+  height: 56px;
+  background: #1e293b;
+  color: #f8fafc;
+}
+
+.layout__logo {
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.layout__user {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.layout__user button {
+  padding: 0.25rem 0.75rem;
+  background: transparent;
+  border: 1px solid #94a3b8;
+  border-radius: 4px;
+  color: #f8fafc;
+  cursor: pointer;
+}
+
+.layout__body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.layout__sidebar {
+  display: flex;
+  flex-direction: column;
+  width: 220px;
+  padding: 1rem 0;
+  background: #f1f5f9;
+  border-right: 1px solid #e2e8f0;
+}
+
+.nav-link {
+  padding: 0.6rem 1.25rem;
+  text-decoration: none;
+  color: #475569;
+  font-size: 0.95rem;
+}
+
+.nav-link--active {
+  background: #e2e8f0;
+  color: #1e293b;
+  font-weight: 600;
+}
+
+.layout__content {
+  flex: 1;
+  padding: 2rem;
+  overflow-y: auto;
+}
