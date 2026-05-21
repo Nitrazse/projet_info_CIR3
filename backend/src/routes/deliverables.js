@@ -7,12 +7,19 @@ const router = Router();
 
 router.use(authenticate);
 
-// TODO: GET    /api/deliverables?projectId=  — liste les livrables d'un projet
-// TODO: POST   /api/deliverables             — dépose un livrable (upload fichier via Supabase Storage)
-// TODO: GET    /api/deliverables/:id         — télécharge / détail d'un livrable
-// TODO: PATCH  /api/deliverables/:id/status  — valide ou rejette un livrable (ENCADRANT, JURY)
-// TODO: DELETE /api/deliverables/:id         — supprime un livrable
+// GET    /api/deliverables?project_id=       — liste les livrables d'un projet
+router.get('/', deliverablesController.listDeliverables);
 
-router.get('/', (req, res) => res.json({ module: 'deliverables' }));
+// POST   /api/deliverables                   — enregistre un livrable (URL storage_path)
+router.post('/', deliverablesController.uploadDeliverable);
+
+// GET    /api/deliverables/:id               — détail + URL signée du livrable
+router.get('/:id', deliverablesController.getDeliverable);
+
+// PATCH  /api/deliverables/:id/status        — valide ou rejette (ENCADRANT, JURY)
+router.patch('/:id/status', requireRole(ROLES.ENCADRANT, ROLES.JURY), deliverablesController.updateDeliverableStatus);
+
+// DELETE /api/deliverables/:id               — supprime un livrable
+router.delete('/:id', deliverablesController.deleteDeliverable);
 
 export default router;

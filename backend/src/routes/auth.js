@@ -1,13 +1,19 @@
 import { Router } from 'express';
+import { authenticate } from '../middlewares/auth.js';
 import * as authController from '../controllers/auth.js';
 
 const router = Router();
 
-// TODO: POST /api/auth/register — inscription (email, password, role, nom)
-// TODO: POST /api/auth/login    — connexion, retourne le JWT Supabase
-// TODO: POST /api/auth/logout   — révoque la session Supabase
-// TODO: GET  /api/auth/me       — retourne le profil de l'utilisateur connecté
+// POST /api/auth/register — inscription (email, password, nom, role)
+router.post('/register', authController.register);
 
-router.get('/', (req, res) => res.json({ module: 'auth' }));
+// POST /api/auth/login — connexion, retourne { token, user }
+router.post('/login', authController.login);
+
+// POST /api/auth/logout — révoque la session Supabase
+router.post('/logout', authController.logout);
+
+// GET /api/auth/me — profil de l'utilisateur connecté (token requis)
+router.get('/me', authenticate, authController.getMe);
 
 export default router;

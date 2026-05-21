@@ -7,12 +7,19 @@ const router = Router();
 
 router.use(authenticate);
 
-// TODO: GET    /api/evaluations?projectId=   — liste les évaluations d'un projet
-// TODO: POST   /api/evaluations              — crée une évaluation (ENCADRANT, JURY)
-// TODO: GET    /api/evaluations/:id          — détail d'une évaluation
-// TODO: PATCH  /api/evaluations/:id          — modifie une évaluation (avant clôture)
-// TODO: GET    /api/evaluations/:projectId/export — export PDF/CSV (JURY, ENCADRANT)
+// GET    /api/evaluations?project_id=        — liste les évaluations d'un projet
+router.get('/', evaluationsController.listEvaluations);
 
-router.get('/', (req, res) => res.json({ module: 'evaluations' }));
+// POST   /api/evaluations                    — crée une évaluation (ENCADRANT, JURY)
+router.post('/', requireRole(ROLES.ENCADRANT, ROLES.JURY), evaluationsController.createEvaluation);
+
+// GET    /api/evaluations/:id                — détail d'une évaluation
+router.get('/:id', evaluationsController.getEvaluation);
+
+// PATCH  /api/evaluations/:id               — modifie une évaluation (ENCADRANT, JURY)
+router.patch('/:id', requireRole(ROLES.ENCADRANT, ROLES.JURY), evaluationsController.updateEvaluation);
+
+// GET    /api/evaluations/:projectId/export  — export CSV (ENCADRANT, JURY)
+router.get('/:projectId/export', requireRole(ROLES.ENCADRANT, ROLES.JURY), evaluationsController.exportEvaluations);
 
 export default router;

@@ -6,10 +6,14 @@ const router = Router();
 
 router.use(authenticate);
 
-// TODO: GET    /api/comments?projectId=  — liste les commentaires d'un projet ou d'une tâche
-// TODO: POST   /api/comments             — poste un commentaire (avec ref: projet | tâche)
-// TODO: DELETE /api/comments/:id         — supprime son propre commentaire
+// GET    /api/comments?project_id=  — commentaires d'un projet
+// GET    /api/comments?task_id=     — commentaires d'une tâche
+router.get('/', commentsController.listComments);
 
-router.get('/', (req, res) => res.json({ module: 'comments' }));
+// POST   /api/comments              — poste un commentaire
+router.post('/', commentsController.createComment);
+
+// DELETE /api/comments/:id          — supprime son commentaire (ou ENCADRANT)
+router.delete('/:id', commentsController.deleteComment);
 
 export default router;
