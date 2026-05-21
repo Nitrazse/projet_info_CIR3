@@ -5,16 +5,24 @@ import * as projectsController from '../controllers/projects.js';
 
 const router = Router();
 
-// Toutes les routes projets nécessitent d'être connecté
 router.use(authenticate);
 
-// TODO: GET    /api/projects          — liste tous les projets (filtrés par rôle)
-// TODO: POST   /api/projects          — crée un projet (ENCADRANT uniquement)
-// TODO: GET    /api/projects/:id      — détail d'un projet
-// TODO: PATCH  /api/projects/:id      — modifie un projet (ENCADRANT, TEAM_LEADER)
-// TODO: DELETE /api/projects/:id      — supprime un projet (ENCADRANT uniquement)
-// TODO: POST   /api/projects/:id/members — ajoute un membre au projet
+// GET    /api/projects          — liste (filtrée par rôle)
+router.get('/', projectsController.listProjects);
 
-router.get('/', (req, res) => res.json({ module: 'projects' }));
+// POST   /api/projects          — crée un projet (ENCADRANT uniquement)
+router.post('/', requireRole(ROLES.ENCADRANT), projectsController.createProject);
+
+// GET    /api/projects/:id      — détail d'un projet
+router.get('/:id', projectsController.getProject);
+
+// PATCH  /api/projects/:id      — modifie un projet (ENCADRANT, TEAM_LEADER)
+router.patch('/:id', requireRole(ROLES.ENCADRANT, ROLES.TEAM_LEADER), projectsController.updateProject);
+
+// DELETE /api/projects/:id      — supprime un projet (ENCADRANT uniquement)
+router.delete('/:id', requireRole(ROLES.ENCADRANT), projectsController.deleteProject);
+
+// POST   /api/projects/:id/members — ajoute un membre (ENCADRANT uniquement)
+router.post('/:id/members', requireRole(ROLES.ENCADRANT), projectsController.addMember);
 
 export default router;
