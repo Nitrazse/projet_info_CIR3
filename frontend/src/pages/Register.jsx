@@ -116,7 +116,7 @@ export default function Register() {
                 id="email"
                 className="rfield__input"
                 type="email"
-                placeholder="jean.dupont@isen.yncrea.fr"
+                placeholder="marc.aurelle@junia.com"
                 value={form.email}
                 onChange={set('email')}
                 autoComplete="email"
