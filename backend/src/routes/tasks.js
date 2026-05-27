@@ -25,4 +25,5 @@ router.delete('/:id', requireRole(ROLES.ENCADRANT), tasksController.deleteTask);
 // PATCH  /api/tasks/:id/status       — change le statut (tous les membres authentifiés)
 router.patch('/:id/status', tasksController.updateTaskStatus);
 
+// Validation et revue des routes CRUD tâches par l'équipe
 export default router;
