@@ -1,0 +1,129 @@
+/* ── EncadrantDashboard ── */
+.enc-dashboard {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* Health distribution bar */
+.enc-health-dist {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.enc-health-dist__bar {
+  display: flex;
+  height: 12px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: #e2e8f0;
+  gap: 2px;
+}
+
+.enc-health-dist__seg {
+  border-radius: 999px;
+  transition: flex 0.4s ease;
+}
+
+.enc-health-dist__seg--green { background: #16a34a; }
+.enc-health-dist__seg--amber { background: #d97706; }
+.enc-health-dist__seg--red   { background: #dc2626; }
+
+.enc-health-dist__legend {
+  display: flex;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.enc-health-dist__leg {
+  font-size: 0.78rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.enc-health-dist__leg::before {
+  content: '';
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.enc-health-dist__leg--green::before { background: #16a34a; }
+.enc-health-dist__leg--amber::before { background: #d97706; }
+.enc-health-dist__leg--red::before   { background: #dc2626; }
+
+.enc-health-dist__leg--green { color: #16a34a; }
+.enc-health-dist__leg--amber { color: #d97706; }
+.enc-health-dist__leg--red   { color: #dc2626; }
+
+/* Health badge on project cards */
+.enc-card-badges {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.enc-health-badge {
+  display: inline-flex;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.enc-health-badge--green { background: rgba(22, 163, 74, 0.1);   color: #16a34a; }
+.enc-health-badge--amber { background: rgba(217, 119, 6, 0.1);   color: #d97706; }
+.enc-health-badge--red   { background: rgba(220, 38, 38, 0.1);   color: #dc2626; }
+
+/* Mini stats row */
+.enc-card-stats {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.15rem;
+}
+
+.enc-card-stat {
+  font-size: 0.72rem;
+  color: #64748b;
+  background: rgba(100, 116, 139, 0.08);
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.enc-card-stat--amber {
+  color: #d97706;
+  background: rgba(217, 119, 6, 0.08);
+}
+
+.enc-card-stat--red {
+  color: #dc2626;
+  background: rgba(220, 38, 38, 0.08);
+}
+
+/* Notification count badge sur quick links */
+.enc-badge-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  background: #d97706;
+  color: #fff;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  margin-left: 0.25rem;
+}
+
+/* KPI amber/red variants (manquants dans Dashboard.css) */
+.dash-kpi--amber::before { background: #d97706; }
+.dash-kpi--red::before   { background: #dc2626; }

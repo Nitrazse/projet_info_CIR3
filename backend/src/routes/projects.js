@@ -7,22 +7,60 @@ const router = Router();
 
 router.use(authenticate);
 
-// GET    /api/projects          — liste (filtrée par rôle)
+// GET    /api/projects                          — liste (filtrée par rôle)
 router.get('/', projectsController.listProjects);
 
-// POST   /api/projects          — crée un projet (ENCADRANT uniquement)
+// POST   /api/projects                          — crée un projet (ENCADRANT)
 router.post('/', requireRole(ROLES.ENCADRANT), projectsController.createProject);
 
-// GET    /api/projects/:id      — détail d'un projet
+// GET    /api/projects/:id                      — détail complet (membres, tâches, livrables, stats, feedbacks)
 router.get('/:id', projectsController.getProject);
 
-// PATCH  /api/projects/:id      — modifie un projet (ENCADRANT, TEAM_LEADER)
+// PATCH  /api/projects/:id                      — modifie un projet (ENCADRANT, TEAM_LEADER)
 router.patch('/:id', requireRole(ROLES.ENCADRANT, ROLES.TEAM_LEADER), projectsController.updateProject);
 
-// DELETE /api/projects/:id      — supprime un projet (ENCADRANT uniquement)
+// DELETE /api/projects/:id                      — supprime un projet (ENCADRANT)
 router.delete('/:id', requireRole(ROLES.ENCADRANT), projectsController.deleteProject);
 
-// POST   /api/projects/:id/members — ajoute un membre (ENCADRANT uniquement)
+// POST   /api/projects/:id/members              — ajoute un membre (ENCADRANT)
 router.post('/:id/members', requireRole(ROLES.ENCADRANT), projectsController.addMember);
+
+// ─── FEEDBACKS ───────────────────────────────────────────────────────────────
+
+// GET    /api/projects/:id/feedbacks            — liste les feedbacks du projet
+router.get('/:id/feedbacks', projectsController.listFeedbacks);
+
+// POST   /api/projects/:id/feedbacks            — ajoute un feedback (ENCADRANT)
+router.post('/:id/feedbacks', requireRole(ROLES.ENCADRANT), projectsController.addFeedback);
+
+// PATCH  /api/projects/:id/feedbacks/:feedbackId — modifie un feedback (ENCADRANT auteur)
+router.patch('/:id/feedbacks/:feedbackId', requireRole(ROLES.ENCADRANT), projectsController.updateFeedback);
+
+// DELETE /api/projects/:id/feedbacks/:feedbackId — supprime un feedback (ENCADRANT auteur)
+router.delete('/:id/feedbacks/:feedbackId', requireRole(ROLES.ENCADRANT), projectsController.deleteFeedback);
+
+// ─── JALONS ──────────────────────────────────────────────────────────────────
+
+// GET    /api/projects/:id/jalons               — liste les jalons d'un projet
+router.get('/:id/jalons', projectsController.listJalons);
+
+// POST   /api/projects/:id/jalons               — ajoute un jalon (ENCADRANT)
+router.post('/:id/jalons', requireRole(ROLES.ENCADRANT), projectsController.addJalon);
+
+// PATCH  /api/projects/:id/jalons/:jalonId      — modifie un jalon (ENCADRANT)
+router.patch('/:id/jalons/:jalonId', requireRole(ROLES.ENCADRANT), projectsController.updateJalon);
+
+// DELETE /api/projects/:id/jalons/:jalonId      — supprime un jalon (ENCADRANT)
+router.delete('/:id/jalons/:jalonId', requireRole(ROLES.ENCADRANT), projectsController.deleteJalon);
+
+// ─── ÉTUDIANTS DISPONIBLES ────────────────────────────────────────────────────
+
+// GET    /api/projects/etudiants/disponibles    — étudiants non affectés à un projet actif (ENCADRANT)
+router.get('/etudiants/disponibles', requireRole(ROLES.ENCADRANT), projectsController.getEtudiantsDisponibles);
+
+// ─── TRACKING ────────────────────────────────────────────────────────────────
+
+// GET    /api/projects/:id/unseen               — éléments non consultés depuis la dernière visite (ENCADRANT)
+router.get('/:id/unseen', requireRole(ROLES.ENCADRANT), projectsController.getUnseenElements);
 
 export default router;
