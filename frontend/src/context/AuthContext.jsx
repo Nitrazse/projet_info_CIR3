@@ -1,6 +1,5 @@
 import { createContext, useContext, useState } from 'react';
 
-// Rôles disponibles dans la plateforme
 export const ROLES = {
   ETUDIANT: 'etudiant',
   TEAM_LEADER: 'team_leader',
@@ -10,12 +9,29 @@ export const ROLES = {
 
 const AuthContext = createContext(null);
 
+// Relit le user depuis le token JWT stocké en localStorage
+function getUserFromToken() {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) return null;
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    if (payload.exp * 1000 < Date.now()) {
+      localStorage.removeItem('token');
+      return null;
+    }
+    return {
+      id:    payload.sub,
+      email: payload.email,
+      nom:   payload.user_metadata?.nom,
+      role:  payload.user_metadata?.role ?? 'etudiant',
+    };
+  } catch {
+    return null;
+  }
+}
+
 export function AuthProvider({ children }) {
-  // TODO: retirer le mock avant la mise en prod
-  const DEV_MOCK = import.meta.env.VITE_DEV_MOCK === 'true';
-  const [user, setUser] = useState(
-    DEV_MOCK ? { id: 'mock-id', nom: 'Encadrant Test', email: 'test@test.com', role: 'encadrant' } : null
-  );
+  const [user, setUser] = useState(() => getUserFromToken());
 
   function login(userData, token) {
     localStorage.setItem('token', token);
@@ -38,7 +54,6 @@ export function AuthProvider({ children }) {
   );
 }
 
-// Hook raccourci pour consommer le contexte
 export function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error('useAuth doit être utilisé dans un AuthProvider');

@@ -1,0 +1,275 @@
+/* ── EncadrantProjet ── */
+.ep {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Fil d'Ariane */
+.ep-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: #64748b;
+}
+.ep-breadcrumb__link { color: #2563eb; text-decoration: none; }
+.ep-breadcrumb__link:hover { text-decoration: underline; }
+.ep-breadcrumb__sep { color: #cbd5e1; }
+.ep-breadcrumb__current { color: #0f172a; font-weight: 500; }
+
+/* Bandeau identité projet */
+.ep-banner {
+  background: rgba(255,255,255,0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.5);
+  border-radius: 16px;
+  padding: 1.75rem 2rem;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 2rem;
+  box-shadow: 0 4px 24px rgba(37,99,235,0.07);
+}
+.ep-banner__left { flex: 1; min-width: 0; }
+.ep-banner__hd { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.5rem; }
+.ep-banner__title { font-size: 1.5rem; font-weight: 700; color: #0f172a; margin: 0; }
+.ep-banner__desc { color: #475569; font-size: 0.9rem; margin: 0 0 0.75rem; }
+.ep-banner__meta { display: flex; gap: 1.25rem; flex-wrap: wrap; }
+.ep-banner__meta-item { font-size: 0.82rem; color: #64748b; }
+
+/* Cercle de progression */
+.ep-banner__progress {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+.ep-banner__progress-circle { position: relative; }
+.ep-banner__progress-circle svg { transform: rotate(-90deg); }
+.ep-banner__progress-pct {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+.ep-banner__progress-label { font-size: 0.72rem; color: #64748b; }
+
+/* Stats rapides */
+.ep-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 0.75rem;
+}
+.ep-stat {
+  background: rgba(255,255,255,0.65);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.5);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  position: relative;
+  overflow: hidden;
+}
+.ep-stat::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: #cbd5e1; }
+.ep-stat--red::before    { background: #dc2626; }
+.ep-stat--amber::before  { background: #d97706; }
+.ep-stat--green::before  { background: #16a34a; }
+.ep-stat__value { font-size: 1.75rem; font-weight: 700; color: #0f172a; line-height: 1; }
+.ep-stat__label { font-size: 0.75rem; color: #64748b; }
+
+/* Onglets */
+.ep-tabs {
+  display: flex;
+  gap: 0.25rem;
+  background: rgba(255,255,255,0.5);
+  border: 1px solid rgba(255,255,255,0.5);
+  border-radius: 12px;
+  padding: 0.25rem;
+  flex-wrap: wrap;
+}
+.ep-tabs__btn {
+  flex: 1;
+  min-width: fit-content;
+  padding: 0.5rem 1rem;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #64748b;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+}
+.ep-tabs__btn:hover { background: rgba(255,255,255,0.7); color: #0f172a; }
+.ep-tabs__btn--active { background: #2563eb; color: #fff; }
+
+.ep-tab-content { display: flex; flex-direction: column; gap: 1.25rem; }
+
+/* Vue d'ensemble */
+.ep-overview { display: flex; flex-direction: column; gap: 1.25rem; }
+
+/* Équipe */
+.ep-team { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+.ep-team__member { display: flex; align-items: center; gap: 0.5rem; }
+.ep-team__avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: #2563eb; color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 0.9rem;
+}
+
+/* Mini-Gantt */
+.ep-gantt { display: flex; flex-direction: column; gap: 0.75rem; }
+.ep-gantt__row { display: grid; grid-template-columns: 160px 1fr 80px; align-items: center; gap: 0.75rem; }
+.ep-gantt__label { font-size: 0.82rem; color: #0f172a; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ep-gantt__track { position: relative; height: 6px; background: #e2e8f0; border-radius: 999px; }
+.ep-gantt__marker {
+  position: absolute;
+  top: 50%; transform: translate(-50%, -50%);
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+}
+.ep-gantt__marker--grey   { background: #94a3b8; }
+.ep-gantt__marker--blue   { background: #2563eb; }
+.ep-gantt__marker--green  { background: #16a34a; }
+.ep-gantt__marker--late   { background: #dc2626 !important; animation: ep-pulse 1.2s infinite; }
+.ep-gantt__date { font-size: 0.72rem; color: #94a3b8; text-align: right; }
+
+@keyframes ep-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(220,38,38,0.4); }
+  50%       { box-shadow: 0 0 0 6px rgba(220,38,38,0); }
+}
+
+/* Kanban lecture seule */
+.ep-kanban { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; }
+@media (max-width: 768px) { .ep-kanban { grid-template-columns: repeat(2, 1fr); } }
+.ep-kanban__col {
+  background: rgba(255,255,255,0.6);
+  border-radius: 12px;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  border-top: 3px solid #cbd5e1;
+}
+.ep-kanban__col--blue   { border-top-color: #2563eb; }
+.ep-kanban__col--green  { border-top-color: #16a34a; }
+.ep-kanban__col--red    { border-top-color: #dc2626; }
+.ep-kanban__col-hd { display: flex; align-items: center; justify-content: space-between; }
+.ep-kanban__col-title { font-size: 0.78rem; font-weight: 600; color: #0f172a; }
+.ep-kanban__col-count {
+  font-size: 0.7rem; font-weight: 700;
+  background: #e2e8f0; color: #64748b;
+  padding: 1px 7px; border-radius: 999px;
+}
+.ep-kanban__cards { display: flex; flex-direction: column; gap: 0.4rem; }
+.ep-kanban__empty { font-size: 0.78rem; color: #94a3b8; text-align: center; padding: 0.5rem 0; }
+.ep-kanban__card {
+  background: #fff;
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #f1f5f9;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.ep-kanban__card-title { font-size: 0.8rem; color: #0f172a; margin: 0; }
+.ep-kanban__card-date { font-size: 0.7rem; color: #94a3b8; }
+.ep-kanban__card-date--late { color: #dc2626; font-weight: 600; }
+
+/* Livrables */
+.ep-livrables { display: flex; flex-direction: column; gap: 0.5rem; }
+.ep-livrable-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: rgba(255,255,255,0.7);
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.5);
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.ep-livrable-row__info { display: flex; align-items: center; gap: 0.5rem; }
+.ep-livrable-row__nom { font-size: 0.875rem; font-weight: 500; color: #0f172a; }
+.ep-livrable-row__version { font-size: 0.72rem; color: #94a3b8; background: #f1f5f9; padding: 1px 7px; border-radius: 999px; }
+.ep-livrable-row__right { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+.ep-livrable-row__date { font-size: 0.75rem; color: #94a3b8; }
+.ep-livrable-row__action { font-size: 0.8rem; color: #2563eb; text-decoration: none; font-weight: 500; }
+.ep-livrable-row__action:hover { text-decoration: underline; }
+
+/* Communication */
+.ep-communication { display: flex; flex-direction: column; gap: 1.25rem; }
+.ep-comment-box { display: flex; flex-direction: column; gap: 0.75rem; }
+.ep-comment-box__top { display: flex; gap: 0.5rem; }
+.ep-comment-box__type {
+  padding: 0.4rem 0.75rem; border-radius: 8px;
+  border: 1px solid #e2e8f0; font-size: 0.82rem;
+  background: #fff; color: #0f172a; cursor: pointer;
+}
+.ep-comment-box__input {
+  width: 100%; padding: 0.75rem 1rem;
+  border: 1px solid #e2e8f0; border-radius: 10px;
+  font-size: 0.875rem; resize: vertical;
+  font-family: inherit; color: #0f172a;
+  box-sizing: border-box;
+}
+.ep-comment-box__input:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+.ep-comment-box__err { font-size: 0.8rem; color: #dc2626; margin: 0; }
+.ep-comment-box__ft { display: flex; justify-content: flex-end; }
+.ep-comment-box__btn {
+  padding: 0.5rem 1.25rem; background: #2563eb; color: #fff;
+  border: none; border-radius: 8px; font-size: 0.875rem;
+  font-weight: 500; cursor: pointer; transition: background 0.15s;
+}
+.ep-comment-box__btn:hover:not(:disabled) { background: #1d4ed8; }
+.ep-comment-box__btn:disabled { opacity: 0.5; cursor: default; }
+
+.ep-feedbacks { display: flex; flex-direction: column; gap: 0.75rem; }
+.ep-feedback {
+  padding: 0.875rem 1rem;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.7);
+  border-left: 4px solid #e2e8f0;
+}
+.ep-feedback--alerte    { border-left-color: #dc2626; background: rgba(220,38,38,0.04); }
+.ep-feedback--avancement { border-left-color: #2563eb; }
+.ep-feedback--livrable  { border-left-color: #d97706; }
+.ep-feedback__hd { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.4rem; }
+.ep-feedback__type { font-size: 0.75rem; font-weight: 600; color: #64748b; }
+.ep-feedback__type--alerte { color: #dc2626; }
+.ep-feedback__date { font-size: 0.72rem; color: #94a3b8; }
+.ep-feedback__contenu { font-size: 0.875rem; color: #334155; margin: 0; }
+
+/* Evaluations */
+.ep-evaluations { display: flex; flex-direction: column; gap: 0.5rem; }
+.ep-eval-row {
+  display: flex; align-items: center; gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: rgba(255,255,255,0.7);
+  border-radius: 10px; border: 1px solid rgba(255,255,255,0.5);
+}
+.ep-eval-row__note { font-size: 1.5rem; font-weight: 700; color: #0f172a; min-width: 60px; }
+.ep-eval-row__info { display: flex; align-items: center; gap: 0.75rem; }
+.ep-eval-row__date { font-size: 0.75rem; color: #94a3b8; }
+
+/* Utilitaires */
+.ep-empty-sm { font-size: 0.85rem; color: #94a3b8; padding: 0.5rem 0; }
+
+/* badge amber manquant dans Dashboard.css */
+.dash-badge--amber { background: rgba(217,119,6,0.1); color: #d97706; }
+.dash-badge--red   { background: rgba(220,38,38,0.1); color: #dc2626; }

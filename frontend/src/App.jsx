@@ -11,6 +11,7 @@ import Tasks from './pages/Tasks';
 import Deliverables from './pages/Deliverables';
 import Evaluation from './pages/Evaluation';
 import EncadrantDashboard from './pages/EncadrantDashboard';
+import EncadrantProjet from './pages/EncadrantProjet';
 
 // Protège les routes : redirige vers /login si non connecté
 function PrivateRoute({ children }) {
@@ -44,6 +45,7 @@ export default function App() {
             <Route path="/evaluation" element={<Evaluation />} />
             {/* Routes encadrant */}
             <Route path="/encadrant/dashboard" element={<EncadrantDashboard />} />
+            <Route path="/encadrant/projets/:id" element={<EncadrantProjet />} />
           </Route>
         </Routes>
       </BrowserRouter>
