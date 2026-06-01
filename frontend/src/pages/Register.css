@@ -194,6 +194,11 @@
   color: #dc2626;
 }
 
+.rfield__hint {
+  font-size: 0.78rem;
+  color: #6b7280;
+}
+
 /* ── Bouton submit ── */
 .register__submit {
   margin-top: 0.25rem;
