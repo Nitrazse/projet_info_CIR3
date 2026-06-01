@@ -216,6 +216,24 @@
   background-attachment: fixed;
 }
 
+/* Séparateur section encadrant dans la sidebar */
+.ml__nav-sep {
+  height: 1px;
+  background: #1e293b;
+  margin: 0.5rem 1rem;
+}
+
+.ml__nav-link--enc {
+  color: #fbbf24 !important;
+  opacity: 0.85;
+}
+
+.ml__nav-link--enc:hover,
+.ml__nav-link--enc.ml__nav-link--active {
+  opacity: 1;
+  background: rgba(251, 191, 36, 0.1) !important;
+}
+
 /* Mobile overlay */
 .ml__overlay {
   position: fixed;
@@ -253,3 +271,4 @@
     padding: 1.25rem;
   }
 }
+

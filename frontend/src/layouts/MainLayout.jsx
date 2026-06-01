@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Outlet, NavLink, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import './MainLayout.css';
+import './EncadrantDashboard.css';
 
 const ROLE_LABEL = {
   etudiant: 'Étudiant',
@@ -58,6 +59,18 @@ const NAV = [
   },
 ];
 
+const NAV_ENCADRANT = [
+  {
+    to: '/encadrant/dashboard',
+    label: 'Vue encadrant',
+    icon: (
+      <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18">
+        <path d="M2 10a8 8 0 1016 0A8 8 0 002 10zm5-1h2v5H7V9zm4-3h2v8h-2V6z" />
+      </svg>
+    ),
+  },
+];
+
 export default function MainLayout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -95,6 +108,26 @@ export default function MainLayout() {
               {label}
             </NavLink>
           ))}
+
+          {/* Liens réservés à l'encadrant */}
+          {user?.role === 'encadrant' && (
+            <>
+              <div className="ml__nav-sep" />
+              {NAV_ENCADRANT.map(({ to, label, icon }) => (
+                <NavLink
+                  key={to}
+                  to={to}
+                  onClick={() => setMobileOpen(false)}
+                  className={({ isActive }) =>
+                    `ml__nav-link ml__nav-link--enc${isActive ? ' ml__nav-link--active' : ''}`
+                  }
+                >
+                  <span className="ml__nav-icon">{icon}</span>
+                  {label}
+                </NavLink>
+              ))}
+            </>
+          )}
         </nav>
 
         <div className="ml__user">
