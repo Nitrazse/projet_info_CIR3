@@ -56,14 +56,27 @@
   }
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   margin: 0;
+  background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 40%, #fff8f0 65%, #fed7aa 100%) fixed;
+  background-attachment: fixed;
 }
 
 #root {
   min-height: 100svh;
   display: flex;
   flex-direction: column;
+}
+
+@media (prefers-color-scheme: dark) {
+  body {
+    background: linear-gradient(135deg, #0d1f4a 0%, #111827 40%, #1c1005 65%, #3d1f00 100%) fixed;
+    background-attachment: fixed;
+  }
 }
 
 h1,

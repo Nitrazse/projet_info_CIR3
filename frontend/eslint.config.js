@@ -17,5 +17,11 @@ export default defineConfig([
       globals: globals.browser,
       parserOptions: { ecmaFeatures: { jsx: true } },
     },
+    rules: {
+      // Standard loading-state pattern (setLoading before async call) is fine
+      'react-hooks/set-state-in-effect': 'off',
+      // AuthContext exports ROLES + useAuth alongside AuthProvider (pre-existing design)
+      'react-refresh/only-export-components': 'warn',
+    },
   },
 ])

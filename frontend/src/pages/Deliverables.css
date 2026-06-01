@@ -1,0 +1,130 @@
+/* ── Deliverables ── */
+.deliv-page {
+  max-width: 900px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.deliv-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.deliv-card {
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 14px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+  transition: box-shadow 0.2s;
+}
+
+.deliv-card:hover {
+  box-shadow: 0 4px 20px rgba(37, 99, 235, 0.08);
+}
+
+.deliv-card__hd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.deliv-card__info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.deliv-card__icon {
+  color: #2563eb;
+  flex-shrink: 0;
+}
+
+.deliv-card__name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0 0 0.15rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.deliv-card__meta {
+  display: flex;
+  gap: 0.75rem;
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin: 0;
+}
+
+.deliv-card__comment {
+  font-size: 0.8rem;
+  color: #64748b;
+  background: rgba(0, 0, 0, 0.03);
+  border-left: 3px solid #e2e8f0;
+  padding: 0.4rem 0.75rem;
+  border-radius: 0 6px 6px 0;
+  margin: 0;
+}
+
+.deliv-card__actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* ── File drop zone ── */
+.file-drop {
+  border: 2px dashed #cbd5e1;
+  border-radius: 10px;
+  padding: 2rem 1rem;
+  text-align: center;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.file-drop:hover {
+  border-color: #2563eb;
+  background: rgba(37, 99, 235, 0.03);
+}
+
+.file-drop--selected {
+  border-color: #16a34a;
+  background: rgba(22, 163, 74, 0.04);
+}
+
+.file-drop__icon {
+  color: #94a3b8;
+}
+
+.file-drop--selected .file-drop__icon {
+  display: none;
+}
+
+.file-drop__hint {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.file-drop__name {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #16a34a;
+}

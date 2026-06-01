@@ -3,9 +3,9 @@ import { Link } from 'react-router-dom';
 import './Navbar.css';
 
 const NAV_LINKS = [
-  { label: 'Fonctionnalités', href: '#features' },
-  { label: 'À propos', href: '#about' },
-  { label: 'Contact', href: '#contact' },
+  { label: 'Fonctionnalités', href: '#features', anchor: true },
+  { label: 'À propos', to: '/about', anchor: false },
+  { label: 'Contact', href: '#contact', anchor: true },
 ];
 
 export default function Navbar() {
@@ -23,11 +23,11 @@ export default function Navbar() {
         </Link>
 
         <nav className={`navbar__nav${open ? ' navbar__nav--open' : ''}`}>
-          {NAV_LINKS.map((l) => (
-            <a key={l.href} href={l.href} className="navbar__link" onClick={handleNavClick}>
-              {l.label}
-            </a>
-          ))}
+          {NAV_LINKS.map((l) =>
+            l.anchor
+              ? <a key={l.href} href={l.href} className="navbar__link" onClick={handleNavClick}>{l.label}</a>
+              : <Link key={l.to} to={l.to} className="navbar__link" onClick={handleNavClick}>{l.label}</Link>
+          )}
         </nav>
 
         <div className="navbar__actions">
@@ -53,11 +53,11 @@ export default function Navbar() {
 
       {open && (
         <div className="navbar__mobile-menu">
-          {NAV_LINKS.map((l) => (
-            <a key={l.href} href={l.href} className="navbar__mobile-link" onClick={handleNavClick}>
-              {l.label}
-            </a>
-          ))}
+          {NAV_LINKS.map((l) =>
+            l.anchor
+              ? <a key={l.href} href={l.href} className="navbar__mobile-link" onClick={handleNavClick}>{l.label}</a>
+              : <Link key={l.to} to={l.to} className="navbar__mobile-link" onClick={handleNavClick}>{l.label}</Link>
+          )}
           <div className="navbar__mobile-actions">
             <Link to="/login" className="navbar__btn navbar__btn--ghost" onClick={handleNavClick}>
               Se connecter
