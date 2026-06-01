@@ -1,43 +1,127 @@
 import { supabaseAdmin } from '../config/supabase.js';
 import { sendError, getPagination } from '../utils/index.js';
+import { createNotification } from './notifications.js';
 
 const VALID_STATUSES = ['soumis', 'valide', 'rejete'];
 
 // Liste les livrables d'un projet
 export async function listDeliverables(req, res) {
   const { page, limit, offset } = getPagination(req.query);
-  const { project_id } = req.query;
+  const { project_id, statut } = req.query;
 
   if (!project_id) return sendError(res, 400, 'project_id est requis');
 
-  const { data, error, count } = await supabaseAdmin
+  let query = supabaseAdmin
     .from('deliverables')
     .select('*', { count: 'exact' })
     .eq('project_id', project_id)
     .order('created_at', { ascending: false })
     .range(offset, offset + limit - 1);
 
+  if (statut) query = query.eq('statut', statut);
+
+  const { data, error, count } = await query;
+
   if (error) return sendError(res, 500, error.message);
 
   return res.json({ deliverables: data, total: count, page, limit });
 }
 
-// Enregistre un livrable — le client uploade directement dans Supabase Storage
-// et envoie l'URL publique ou le chemin storage_path
+// Liste les livrables en attente de validation (ENCADRANT, JURY)
+export async function listPendingDeliverables(req, res) {
+  const { page, limit, offset } = getPagination(req.query);
+  const { project_id } = req.query;
+
+  let query = supabaseAdmin
+    .from('deliverables')
+    .select('*, projects(nom, encadrant_id)', { count: 'exact' })
+    .eq('statut', 'soumis')
+    .order('created_at', { ascending: true })
+    .range(offset, offset + limit - 1);
+
+  if (project_id) query = query.eq('project_id', project_id);
+
+  // Encadrant ne voit que ses projets
+  if (req.user.role === 'encadrant') {
+    query = query.eq('projects.encadrant_id', req.user.id);
+  }
+
+  const { data, error, count } = await query;
+
+  if (error) return sendError(res, 500, error.message);
+
+  return res.json({ deliverables: data, total: count, page, limit });
+}
+
+// Enregistre un livrable (avec versioning automatique)
 export async function uploadDeliverable(req, res) {
-  const { project_id, nom, storage_path, type_fichier } = req.body;
+  const { project_id, nom, storage_path, type_fichier, livrable_parent_id } = req.body;
 
   if (!project_id || !nom || !storage_path) {
     return sendError(res, 400, 'project_id, nom et storage_path sont obligatoires');
   }
 
+  let version = 1;
+
+  if (livrable_parent_id) {
+    // Nouvelle version d'un livrable existant
+    const { data: parent, error: parentError } = await supabaseAdmin
+      .from('deliverables')
+      .select('version, nom, project_id')
+      .eq('id', livrable_parent_id)
+      .single();
+
+    if (parentError || !parent) return sendError(res, 404, 'Livrable parent introuvable');
+    if (parent.project_id !== project_id) return sendError(res, 400, 'Le livrable parent appartient à un autre projet');
+
+    version = parent.version + 1;
+  } else {
+    // Vérifie s'il existe déjà un livrable du même nom dans ce projet
+    const { data: existing } = await supabaseAdmin
+      .from('deliverables')
+      .select('version')
+      .eq('project_id', project_id)
+      .eq('nom', nom)
+      .order('version', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (existing) version = existing.version + 1;
+  }
+
   const { data, error } = await supabaseAdmin
     .from('deliverables')
-    .insert({ project_id, nom, storage_path, type_fichier, deposant_id: req.user.id, statut: 'soumis' })
+    .insert({
+      project_id,
+      nom,
+      storage_path,
+      type_fichier,
+      deposant_id: req.user.id,
+      statut: 'soumis',
+      version,
+      livrable_parent_id: livrable_parent_id ?? null,
+    })
     .select()
     .single();
 
   if (error) return sendError(res, 400, error.message);
+
+  // Notifie l'encadrant du projet
+  const { data: project } = await supabaseAdmin
+    .from('projects')
+    .select('encadrant_id, nom')
+    .eq('id', project_id)
+    .single();
+
+  if (project?.encadrant_id) {
+    const versionLabel = version > 1 ? ` (v${version})` : '';
+    await createNotification(
+      project.encadrant_id,
+      'livrable_soumis',
+      `Nouveau livrable soumis${versionLabel} : "${nom}" sur le projet "${project.nom}"`,
+      project_id
+    );
+  }
 
   return res.status(201).json({ deliverable: data });
 }
@@ -46,19 +130,30 @@ export async function uploadDeliverable(req, res) {
 export async function getDeliverable(req, res) {
   const { id } = req.params;
 
-  const { data, error } = await supabaseAdmin.from('deliverables').select('*').eq('id', id).single();
+  const { data, error } = await supabaseAdmin
+    .from('deliverables')
+    .select('*, projects(nom)')
+    .eq('id', id)
+    .single();
 
   if (error || !data) return sendError(res, 404, 'Livrable introuvable');
 
-  // Génère une URL signée depuis Supabase Storage
-  const { data: signedUrl, error: urlError } = await supabaseAdmin.storage
+  const { data: signedUrl } = await supabaseAdmin.storage
     .from('deliverables')
     .createSignedUrl(data.storage_path, 3600);
 
-  return res.json({ deliverable: data, url: signedUrl?.signedUrl ?? null });
+  // Récupère les autres versions du même livrable
+  const { data: versions } = await supabaseAdmin
+    .from('deliverables')
+    .select('id, version, statut, created_at, deposant_id')
+    .eq('project_id', data.project_id)
+    .eq('nom', data.nom)
+    .order('version', { ascending: false });
+
+  return res.json({ deliverable: data, url: signedUrl?.signedUrl ?? null, versions: versions ?? [] });
 }
 
-// Valide ou rejette un livrable (ENCADRANT, JURY)
+// Valide ou rejette un livrable (ENCADRANT, JURY) + notification automatique
 export async function updateDeliverableStatus(req, res) {
   const { id } = req.params;
   const { statut, commentaire } = req.body;
@@ -67,15 +162,28 @@ export async function updateDeliverableStatus(req, res) {
   if (!VALID_STATUSES.includes(statut)) {
     return sendError(res, 400, `Statut invalide. Valeurs acceptées : ${VALID_STATUSES.join(', ')}`);
   }
+  if (statut === 'soumis') return sendError(res, 400, 'Impossible de repasser un livrable à "soumis"');
 
   const { data, error } = await supabaseAdmin
     .from('deliverables')
-    .update({ statut, commentaire_validation: commentaire })
+    .update({ statut, commentaire_validation: commentaire ?? null, valide_par: req.user.id, valide_at: new Date().toISOString() })
     .eq('id', id)
-    .select()
+    .select('*, projects(nom)')
     .single();
 
   if (error || !data) return sendError(res, 404, 'Livrable introuvable');
+
+  // Notifie le déposant
+  if (data.deposant_id) {
+    const action = statut === 'valide' ? 'validé' : 'rejeté';
+    const commentaireNote = commentaire ? ` — Commentaire : "${commentaire}"` : '';
+    await createNotification(
+      data.deposant_id,
+      'livrable_statue',
+      `Votre livrable "${data.nom}" (v${data.version}) a été ${action} sur le projet "${data.projects?.nom}"${commentaireNote}`,
+      data.project_id
+    );
+  }
 
   return res.json({ deliverable: data });
 }
@@ -86,7 +194,7 @@ export async function deleteDeliverable(req, res) {
 
   const { data, error: fetchError } = await supabaseAdmin
     .from('deliverables')
-    .select('storage_path, deposant_id')
+    .select('storage_path, deposant_id, statut')
     .eq('id', id)
     .single();
 
@@ -96,7 +204,11 @@ export async function deleteDeliverable(req, res) {
     return sendError(res, 403, 'Vous ne pouvez supprimer que vos propres livrables');
   }
 
-  // Supprime le fichier du bucket Storage
+  // Empêche la suppression d'un livrable validé sauf par l'encadrant
+  if (data.statut === 'valide' && req.user.role !== 'encadrant') {
+    return sendError(res, 403, 'Un livrable validé ne peut être supprimé que par l\'encadrant');
+  }
+
   await supabaseAdmin.storage.from('deliverables').remove([data.storage_path]);
 
   const { error } = await supabaseAdmin.from('deliverables').delete().eq('id', id);

@@ -16,7 +16,7 @@ const COLUMNS = [
     links: [
       { label: 'À propos', href: '#about' },
       { label: 'L\'équipe', href: '#about' },
-      { label: 'L\'ISEN', href: 'https://www.isen.fr', external: true },
+      { label: 'L\'ISEN', href: 'https://www.junia.com/fr/junia/programme-grande-ecole-isen/', external: true },
       { label: 'Notre PFA', href: '#about' },
     ],
   },

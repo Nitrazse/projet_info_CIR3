@@ -59,7 +59,8 @@
 }
 
 .section--alt {
-  background: #fdf7f0;
+  background: rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(2px);
 }
 
 .section__header {
@@ -103,10 +104,7 @@
   justify-content: center;
   min-height: 82vh;
   padding: 5rem 1.5rem;
-  background:
-    radial-gradient(ellipse at 60% 35%, rgba(217, 119, 6, 0.07) 0%, transparent 55%),
-    radial-gradient(ellipse at 18% 75%, rgba(180, 83, 9, 0.05) 0%, transparent 50%),
-    linear-gradient(170deg, #fafafa 0%, #fdf7f0 60%, #fafafa 100%);
+  background: rgba(0, 0, 0, 0.06);
   text-align: center;
 }
 
@@ -173,14 +171,6 @@
   color: var(--accent);
 }
 
-@media (prefers-color-scheme: dark) {
-  .hero {
-    background:
-      radial-gradient(ellipse at 60% 35%, rgba(96, 165, 250, 0.1) 0%, transparent 55%),
-      radial-gradient(ellipse at 18% 75%, rgba(251, 191, 36, 0.06) 0%, transparent 50%),
-      linear-gradient(170deg, #16171d 0%, #1f1508 60%, #16171d 100%);
-  }
-}
 
 @media (max-width: 680px) {
   .hero {
@@ -618,15 +608,15 @@
 /* ── Dark mode ── */
 @media (prefers-color-scheme: dark) {
   .section--alt {
-    background: #1e1608;
+    background: rgba(0, 0, 0, 0.3);
   }
 
   .feature-card,
   .team-card {
-    background: #1e1f2a;
+    background: rgba(0, 0, 0, 0.35);
   }
 
   .about__isen-badge {
-    background: #1e1f2a;
+    background: rgba(0, 0, 0, 0.3);
   }
 }

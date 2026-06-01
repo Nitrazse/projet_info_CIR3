@@ -1,7 +1,7 @@
 -- Tables créées par Blaise — module projets
 -- À exécuter dans Supabase SQL Editor
 
-CREATE TABLE projects (
+CREATE TABLE IF NOT EXISTS projects (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   nom VARCHAR(255) NOT NULL,
   description TEXT,
@@ -14,7 +14,7 @@ CREATE TABLE projects (
   updated_at TIMESTAMP DEFAULT now()
 );
 
-CREATE TABLE project_members (
+CREATE TABLE IF NOT EXISTS project_members (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
   user_id UUID,

@@ -1,0 +1,165 @@
+/* ── Evaluation ── */
+.eval-page {
+  max-width: 900px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.eval-page__actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+/* Summary */
+.eval-summary {
+  display: flex;
+  gap: 1.5rem;
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 14px;
+  padding: 1.25rem 1.75rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+}
+
+.eval-summary__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0 1.25rem;
+  border-right: 1px solid #e2e8f0;
+}
+
+.eval-summary__item:last-child {
+  border-right: none;
+}
+
+.eval-summary__val {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1;
+}
+
+.eval-summary__val--green { color: #16a34a; }
+.eval-summary__val--blue  { color: #2563eb; }
+.eval-summary__val--amber { color: #d97706; }
+.eval-summary__val--red   { color: #dc2626; }
+
+.eval-summary__label {
+  font-size: 0.78rem;
+  color: #64748b;
+}
+
+/* List */
+.eval-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.eval-card {
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 14px;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+  transition: box-shadow 0.2s;
+}
+
+.eval-card:hover {
+  box-shadow: 0 4px 20px rgba(37, 99, 235, 0.08);
+}
+
+.eval-card__hd {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.25rem;
+}
+
+/* Note circle */
+.eval-note {
+  display: flex;
+  align-items: baseline;
+  gap: 1px;
+  flex-shrink: 0;
+  background: rgba(37, 99, 235, 0.08);
+  border-radius: 10px;
+  padding: 0.5rem 0.75rem;
+  text-align: center;
+}
+
+.eval-note--green { background: rgba(22, 163, 74, 0.08); }
+.eval-note--blue  { background: rgba(37, 99, 235, 0.08); }
+.eval-note--amber { background: rgba(217, 119, 6, 0.08); }
+.eval-note--red   { background: rgba(220, 38, 38, 0.08); }
+
+.eval-note__val {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.eval-note--green .eval-note__val { color: #16a34a; }
+.eval-note--blue  .eval-note__val { color: #2563eb; }
+.eval-note--amber .eval-note__val { color: #d97706; }
+.eval-note--red   .eval-note__val { color: #dc2626; }
+
+.eval-note__max {
+  font-size: 0.85rem;
+  color: #94a3b8;
+}
+
+.eval-card__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.eval-card__criteres {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #0f172a;
+  margin: 0;
+}
+
+.eval-card__comment {
+  font-size: 0.82rem;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.eval-card__date {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin: 0;
+}
+
+/* Progress bar */
+.eval-bar {
+  height: 5px;
+  background: #e2e8f0;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.eval-bar__fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+.eval-bar__fill--green { background: #16a34a; }
+.eval-bar__fill--blue  { background: #2563eb; }
+.eval-bar__fill--amber { background: #d97706; }
+.eval-bar__fill--red   { background: #dc2626; }
