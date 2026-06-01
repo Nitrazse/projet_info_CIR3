@@ -8,7 +8,8 @@ import progressRoutes from './src/routes/progress.js';
 import commentsRoutes from './src/routes/comments.js';
 import deliverablesRoutes from './src/routes/deliverables.js';
 import evaluationsRoutes from './src/routes/evaluations.js';
-import notificationsRoutes from './src/routes/notifications.js';  // ← AJOUTE ICI
+import notificationsRoutes from './src/routes/notifications.js';
+import dashboardRoutes from './src/routes/dashboard.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -24,7 +25,8 @@ app.use('/api/progress', progressRoutes);
 app.use('/api/comments', commentsRoutes);
 app.use('/api/deliverables', deliverablesRoutes);
 app.use('/api/evaluations', evaluationsRoutes);
-app.use('/api/notifications', notificationsRoutes);  // ← AJOUTE ICI
+app.use('/api/notifications', notificationsRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ error: `Route ${req.method} ${req.path} introuvable` });
