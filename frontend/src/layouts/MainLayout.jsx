@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Outlet, NavLink, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import './MainLayout.css';
-import './EncadrantDashboard.css';
 
 const ROLE_LABEL = {
   etudiant: 'Étudiant',

@@ -11,7 +11,11 @@ export const ROLES = {
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null); // { id, nom, email, role }
+  // TODO: retirer le mock avant la mise en prod
+  const DEV_MOCK = import.meta.env.VITE_DEV_MOCK === 'true';
+  const [user, setUser] = useState(
+    DEV_MOCK ? { id: 'mock-id', nom: 'Encadrant Test', email: 'test@test.com', role: 'encadrant' } : null
+  );
 
   function login(userData, token) {
     localStorage.setItem('token', token);
