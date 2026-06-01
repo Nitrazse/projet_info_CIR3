@@ -20,21 +20,44 @@ export async function listProjects(req, res) {
   return res.json({ projects: data, total: count, page, limit });
 }
 
-// Crée un projet (ENCADRANT uniquement)
+// Crée un projet avec jalons optionnels (ENCADRANT uniquement)
+// jalons = [{ titre, description, date_echeance }]
 export async function createProject(req, res) {
-  const { nom, description, date_debut, date_fin } = req.body;
+  const { nom, description, date_debut, date_fin, statut, jalons } = req.body;
 
   if (!nom) return sendError(res, 400, 'Le nom du projet est obligatoire');
 
-  const { data, error } = await supabaseAdmin
+  const VALID_STATUTS = ['propose', 'valide', 'en_cours', 'en_retard', 'livre', 'soutenu', 'cloture'];
+  if (statut && !VALID_STATUTS.includes(statut)) {
+    return sendError(res, 400, `Statut invalide. Valeurs acceptées : ${VALID_STATUTS.join(', ')}`);
+  }
+
+  const { data: project, error } = await supabaseAdmin
     .from('projects')
-    .insert({ nom, description, date_debut, date_fin, encadrant_id: req.user.id, statut: 'en_cours' })
+    .insert({ nom, description, date_debut, date_fin, encadrant_id: req.user.id, statut: statut ?? 'propose' })
     .select()
     .single();
 
   if (error) return sendError(res, 400, error.message);
 
-  return res.status(201).json({ project: data });
+  // Crée les jalons si fournis
+  let jalonsCrees = [];
+  if (Array.isArray(jalons) && jalons.length > 0) {
+    const jalonsAInserer = jalons.map(j => {
+      if (!j.titre || !j.date_echeance) throw { status: 400, message: 'Chaque jalon doit avoir un titre et une date_echeance' };
+      return { project_id: project.id, titre: j.titre, description: j.description ?? null, date_echeance: j.date_echeance, statut: 'a_faire' };
+    });
+
+    const { data: jalonsData, error: jalonsError } = await supabaseAdmin
+      .from('jalons')
+      .insert(jalonsAInserer)
+      .select();
+
+    if (jalonsError) return sendError(res, 400, jalonsError.message);
+    jalonsCrees = jalonsData;
+  }
+
+  return res.status(201).json({ project: { ...project, jalons: jalonsCrees } });
 }
 
 // Détail complet d'un projet — membres, tâches, livrables, évaluations, avancement, feedbacks
@@ -100,9 +123,23 @@ export async function updateProject(req, res) {
   const { id } = req.params;
   const { nom, description, date_debut, date_fin, statut } = req.body;
 
+  // Seul l'encadrant propriétaire peut modifier (pas un encadrant tiers)
+  if (req.user.role === 'encadrant') {
+    const { data: existing } = await supabaseAdmin.from('projects').select('encadrant_id').eq('id', id).single();
+    if (!existing) return sendError(res, 404, 'Projet introuvable');
+    if (existing.encadrant_id !== req.user.id) return sendError(res, 403, 'Vous ne pouvez modifier que vos propres projets');
+  }
+
+  const updates = {};
+  if (nom !== undefined) updates.nom = nom;
+  if (description !== undefined) updates.description = description;
+  if (date_debut !== undefined) updates.date_debut = date_debut;
+  if (date_fin !== undefined) updates.date_fin = date_fin;
+  if (statut !== undefined) updates.statut = statut;
+
   const { data, error } = await supabaseAdmin
     .from('projects')
-    .update({ nom, description, date_debut, date_fin, statut })
+    .update(updates)
     .eq('id', id)
     .select()
     .single();
@@ -247,6 +284,123 @@ export async function deleteFeedback(req, res) {
   const { error } = await supabaseAdmin.from('project_feedbacks').delete().eq('id', feedbackId);
   if (error) return sendError(res, 400, error.message);
   return res.status(204).send();
+}
+
+// ─── JALONS ──────────────────────────────────────────────────────────────────
+
+// Liste les jalons d'un projet
+export async function listJalons(req, res) {
+  const { id } = req.params;
+  const { data, error } = await supabaseAdmin
+    .from('jalons')
+    .select('*')
+    .eq('project_id', id)
+    .order('date_echeance', { ascending: true });
+  if (error) return sendError(res, 500, error.message);
+  return res.json({ jalons: data });
+}
+
+// Ajoute un jalon à un projet (ENCADRANT)
+export async function addJalon(req, res) {
+  const { id } = req.params;
+  const { titre, description, date_echeance } = req.body;
+
+  if (!titre || !date_echeance) return sendError(res, 400, 'titre et date_echeance sont obligatoires');
+
+  const { data: project } = await supabaseAdmin.from('projects').select('encadrant_id').eq('id', id).single();
+  if (!project) return sendError(res, 404, 'Projet introuvable');
+  if (project.encadrant_id !== req.user.id) return sendError(res, 403, 'Vous ne pouvez gérer que les jalons de vos projets');
+
+  const { data, error } = await supabaseAdmin
+    .from('jalons')
+    .insert({ project_id: id, titre, description, date_echeance, statut: 'a_faire' })
+    .select()
+    .single();
+
+  if (error) return sendError(res, 400, error.message);
+  return res.status(201).json({ jalon: data });
+}
+
+// Modifie un jalon (ENCADRANT propriétaire)
+export async function updateJalon(req, res) {
+  const { jalonId } = req.params;
+  const { titre, description, date_echeance, statut } = req.body;
+
+  const VALID_STATUTS = ['a_faire', 'en_cours', 'termine'];
+  if (statut && !VALID_STATUTS.includes(statut)) {
+    return sendError(res, 400, `Statut invalide. Valeurs acceptées : ${VALID_STATUTS.join(', ')}`);
+  }
+
+  const { data: jalon } = await supabaseAdmin
+    .from('jalons')
+    .select('project_id')
+    .eq('id', jalonId)
+    .single();
+
+  if (!jalon) return sendError(res, 404, 'Jalon introuvable');
+
+  const { data: project } = await supabaseAdmin.from('projects').select('encadrant_id').eq('id', jalon.project_id).single();
+  if (project.encadrant_id !== req.user.id) return sendError(res, 403, 'Vous ne pouvez modifier que les jalons de vos projets');
+
+  const updates = {};
+  if (titre !== undefined) updates.titre = titre;
+  if (description !== undefined) updates.description = description;
+  if (date_echeance !== undefined) updates.date_echeance = date_echeance;
+  if (statut !== undefined) updates.statut = statut;
+
+  const { data, error } = await supabaseAdmin.from('jalons').update(updates).eq('id', jalonId).select().single();
+  if (error) return sendError(res, 400, error.message);
+  return res.json({ jalon: data });
+}
+
+// Supprime un jalon (ENCADRANT propriétaire)
+export async function deleteJalon(req, res) {
+  const { jalonId } = req.params;
+
+  const { data: jalon } = await supabaseAdmin.from('jalons').select('project_id').eq('id', jalonId).single();
+  if (!jalon) return sendError(res, 404, 'Jalon introuvable');
+
+  const { data: project } = await supabaseAdmin.from('projects').select('encadrant_id').eq('id', jalon.project_id).single();
+  if (project.encadrant_id !== req.user.id) return sendError(res, 403, 'Vous ne pouvez supprimer que les jalons de vos projets');
+
+  const { error } = await supabaseAdmin.from('jalons').delete().eq('id', jalonId);
+  if (error) return sendError(res, 400, error.message);
+  return res.status(204).send();
+}
+
+// ─── ÉTUDIANTS DISPONIBLES ────────────────────────────────────────────────────
+
+// Retourne les étudiants non affectés à un projet en cours (statut en_cours ou valide)
+export async function getEtudiantsDisponibles(req, res) {
+  // Récupère les user_id déjà dans un projet actif
+  const { data: projetsActifs } = await supabaseAdmin
+    .from('projects')
+    .select('id')
+    .in('statut', ['valide', 'en_cours', 'en_retard']);
+
+  const projectIds = projetsActifs?.map(p => p.id) ?? [];
+
+  let occupesIds = [];
+  if (projectIds.length > 0) {
+    const { data: membresOccupes } = await supabaseAdmin
+      .from('project_members')
+      .select('user_id')
+      .in('project_id', projectIds)
+      .in('role', ['etudiant', 'team_leader']);
+    occupesIds = [...new Set(membresOccupes?.map(m => m.user_id) ?? [])];
+  }
+
+  // Récupère tous les utilisateurs avec rôle étudiant ou team_leader
+  const { data: tousEtudiants, error } = await supabaseAdmin
+    .from('users_view')
+    .select('id, email, nom, role')
+    .in('role', ['etudiant', 'team_leader']);
+
+  if (error) return sendError(res, 500, error.message);
+
+  const disponibles = (tousEtudiants ?? []).filter(u => !occupesIds.includes(u.id));
+
+  return res.json({ etudiants: disponibles, total: disponibles.length });
 }
 
 // ─── TRACKING ÉLÉMENTS NON CONSULTÉS ─────────────────────────────────────────
