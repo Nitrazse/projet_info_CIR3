@@ -17,6 +17,34 @@ const PANEL = {
   jury:        { theme: 'amber', title: 'Votre espace jury',           sub: 'Accédez aux projets qui vous sont assignés et gérez vos évaluations depuis un tableau de bord dédié.' },
 };
 
+const IS_DEV = import.meta.env.DEV;
+
+function validateEmailForRole(email, role) {
+  if (IS_DEV && email.endsWith('@gmail.com')) return null;
+
+  if (['etudiant', 'team_leader'].includes(role)) {
+    if (!email.endsWith('@student.junia.com'))
+      return 'Les étudiants et team leaders doivent utiliser une adresse @student.junia.com';
+  } else if (['encadrant', 'jury'].includes(role)) {
+    const valid =
+      (email.endsWith('@junia.com') && !email.endsWith('@student.junia.com')) ||
+      email.endsWith('@ext.junia.com');
+    if (!valid)
+      return 'Les encadrants et jurys doivent utiliser une adresse @junia.com ou @ext.junia.com';
+  }
+  return null;
+}
+
+function getEmailHint(role) {
+  const base = ['etudiant', 'team_leader'].includes(role)
+    ? 'Adresse requise : …@student.junia.com'
+    : ['encadrant', 'jury'].includes(role)
+    ? 'Adresse requise : …@junia.com ou …@ext.junia.com'
+    : null;
+  if (!base) return null;
+  return IS_DEV ? `${base} (ou @gmail.com en dev)` : base;
+}
+
 export default function Register() {
   const [params] = useSearchParams();
   const navigate  = useNavigate();
@@ -28,7 +56,8 @@ export default function Register() {
   const [apiError, setApiError] = useState('');
   const [loading, setLoading]   = useState(false);
 
-  const panel = PANEL[form.role] ?? PANEL.etudiant;
+  const panel    = PANEL[form.role] ?? PANEL.etudiant;
+  const emailHint = getEmailHint(form.role);
 
   function set(field) {
     return (e) => {
@@ -41,6 +70,10 @@ export default function Register() {
     const e = {};
     if (!form.nom.trim())          e.nom      = 'Le nom est requis.';
     if (!form.email.trim())        e.email    = 'L\'email est requis.';
+    else {
+      const emailError = validateEmailForRole(form.email.trim(), form.role);
+      if (emailError) e.email = emailError;
+    }
     if (form.password.length < 8)  e.password = 'Minimum 8 caractères.';
     if (form.password !== form.confirm) e.confirm = 'Les mots de passe ne correspondent pas.';
     return e;
@@ -60,7 +93,10 @@ export default function Register() {
         password: form.password,
         role:     form.role,
       });
-      navigate('/login?registered=1');
+      navigate(
+        `/verify-otp?email=${encodeURIComponent(form.email.trim())}`,
+        { state: { password: form.password } }
+      );
     } catch (err) {
       setApiError(err.response?.data?.error ?? 'Une erreur est survenue.');
     } finally {
@@ -121,6 +157,9 @@ export default function Register() {
                 onChange={set('email')}
                 autoComplete="email"
               />
+              {emailHint && !errors.email && (
+                <span className="rfield__hint">{emailHint}</span>
+              )}
               {errors.email && <span className="rfield__msg">{errors.email}</span>}
             </div>
 
