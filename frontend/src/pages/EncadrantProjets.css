@@ -32,8 +32,8 @@
 /* Stepper */
 .ep2-stepper {
   display: flex;
-  padding: 1rem 1.5rem;
-  gap: 0;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
   border-bottom: 1px solid #f1f5f9;
   flex-shrink: 0;
   overflow-x: auto;
@@ -43,24 +43,17 @@
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  flex: 1;
-  position: relative;
+  flex-shrink: 0;
 }
 
-.ep2-stepper__step:not(:last-child)::after {
-  content: '';
-  position: absolute;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  width: calc(100% - 28px);
-  left: 28px;
+.ep2-stepper__connector {
+  flex: 1;
+  min-width: 24px;
   height: 2px;
   background: #e2e8f0;
-  z-index: 0;
+  transition: background 0.2s;
 }
-
-.ep2-stepper__step--done:not(:last-child)::after { background: #2563eb; }
+.ep2-stepper__connector--done { background: #2563eb; }
 
 .ep2-stepper__dot {
   width: 28px; height: 28px;
@@ -68,7 +61,7 @@
   display: flex; align-items: center; justify-content: center;
   font-size: 0.75rem; font-weight: 700;
   background: #e2e8f0; color: #94a3b8;
-  flex-shrink: 0; z-index: 1;
+  flex-shrink: 0;
   transition: background 0.2s, color 0.2s;
 }
 .ep2-stepper__step--active .ep2-stepper__dot { background: #2563eb; color: #fff; }
@@ -78,7 +71,7 @@
   font-size: 0.72rem; font-weight: 500; color: #94a3b8;
   white-space: nowrap;
 }
-.ep2-stepper__step--active .ep2-stepper__label { color: #2563eb; }
+.ep2-stepper__step--active .ep2-stepper__label { color: #2563eb; font-weight: 600; }
 .ep2-stepper__step--done   .ep2-stepper__label { color: #475569; }
 
 /* Body */

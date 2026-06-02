@@ -437,10 +437,15 @@ export default function EncadrantProjets() {
             {/* Stepper */}
             <div className="ep2-stepper">
               {STEPS.map((s, i) => (
-                <div key={s} className={`ep2-stepper__step${i === step ? ' ep2-stepper__step--active' : i < step ? ' ep2-stepper__step--done' : ''}`}>
-                  <div className="ep2-stepper__dot">{i < step ? '✓' : i + 1}</div>
-                  <span className="ep2-stepper__label">{s}</span>
-                </div>
+                <>
+                  {i > 0 && (
+                    <div key={`connector-${i}`} className={`ep2-stepper__connector${i <= step ? ' ep2-stepper__connector--done' : ''}`} />
+                  )}
+                  <div key={s} className={`ep2-stepper__step${i === step ? ' ep2-stepper__step--active' : i < step ? ' ep2-stepper__step--done' : ''}`}>
+                    <div className="ep2-stepper__dot">{i < step ? '✓' : i + 1}</div>
+                    <span className="ep2-stepper__label">{s}</span>
+                  </div>
+                </>
               ))}
             </div>
 

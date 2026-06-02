@@ -73,7 +73,7 @@ export default function VerifyOtp() {
       if (password) {
         const { data: session } = await api.post('/auth/login', { email, password });
         login(session.user, session.token);
-        navigate('/');
+        navigate('/dashboard');
       } else {
         // Fallback si l'utilisateur a rafraîchi la page (mot de passe perdu)
         setSuccess('Compte vérifié ! Redirection vers la connexion…');

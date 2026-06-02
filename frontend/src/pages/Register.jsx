@@ -163,20 +163,8 @@ export default function Register() {
               {errors.email && <span className="rfield__msg">{errors.email}</span>}
             </div>
 
-            {/* Rôle */}
-            <div className="rfield">
-              <label className="rfield__label" htmlFor="role">Rôle</label>
-              <select
-                id="role"
-                className="rfield__input rfield__input--select"
-                value={form.role}
-                onChange={set('role')}
-              >
-                {ROLES.map(r => (
-                  <option key={r.value} value={r.value}>{r.label}</option>
-                ))}
-              </select>
-            </div>
+            {/* Rôle — masqué, déjà déterminé par le lien d'inscription */}
+            <input type="hidden" value={form.role} />
 
             {/* Mot de passe */}
             <div className={`rfield${errors.password ? ' rfield--error' : ''}`}>
