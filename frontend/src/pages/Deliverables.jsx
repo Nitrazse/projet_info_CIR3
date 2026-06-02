@@ -142,10 +142,13 @@ export default function Deliverables() {
           <h1 className="page-hd__title">Livrables</h1>
           <p className="page-hd__sub">Déposez et suivez les livrables de vos projets</p>
         </div>
-        {projectId && (
+        {projectId && !['cloture', 'soutenu'].includes(projects.find(p => p.id === projectId)?.statut) && (
           <button className="btn btn--primary" onClick={() => { setUploadModal(true); setUploadErr(''); setUploadNom(''); setUploadFile(null); }}>
             Déposer un livrable
           </button>
+        )}
+        {projectId && ['cloture', 'soutenu'].includes(projects.find(p => p.id === projectId)?.statut) && (
+          <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>🔒 Projet clôturé — dépôt désactivé</span>
         )}
       </div>
 

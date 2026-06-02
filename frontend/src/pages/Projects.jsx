@@ -212,8 +212,8 @@ export default function Projects() {
               )}
 
               <div className="project-card__actions">
-                <Link to={`/tasks?project=${p.id}`} className="btn-sm btn-sm--ghost">
-                  Voir les tâches
+                <Link to={`/projects/${p.id}`} className="btn-sm btn-sm--ghost">
+                  Voir le détail
                 </Link>
                 {canEdit && (
                   <button className="btn-sm btn-sm--ghost" onClick={() => openEdit(p)}>

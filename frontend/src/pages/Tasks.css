@@ -135,6 +135,11 @@
   cursor: grabbing;
 }
 
+.kanban-card--locked {
+  cursor: not-allowed;
+  opacity: 0.75;
+}
+
 .kanban-card__hd {
   display: flex;
   align-items: flex-start;

@@ -61,7 +61,10 @@ export default function Tasks() {
     return () => { alive = false; };
   }, [projectId, refresh]);
 
+  const projetCloture = ['cloture', 'soutenu'].includes(projects.find(p => String(p.id) === String(projectId))?.statut);
+
   async function moveTask(taskId, newStatus) {
+    if (projetCloture) return;
     setTasks(ts => ts.map(t => t.id === taskId ? { ...t, statut: newStatus } : t));
     try {
       await api.patch(`/tasks/${taskId}/status`, { statut: newStatus });
@@ -162,8 +165,11 @@ export default function Tasks() {
           <h1 className="page-hd__title">Tâches</h1>
           <p className="page-hd__sub">Glissez les cartes entre les colonnes pour changer le statut</p>
         </div>
-        {canCreate && projectId && (
+        {canCreate && projectId && !projetCloture && (
           <button className="btn btn--primary" onClick={openCreate}>Nouvelle tâche</button>
+        )}
+        {projetCloture && (
+          <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>🔒 Projet clôturé</span>
         )}
       </div>
 
@@ -207,9 +213,9 @@ export default function Tasks() {
                 {tasksByCol[col.id].map(task => (
                   <div
                     key={task.id}
-                    className={`kanban-card${dragging?.id === task.id ? ' kanban-card--dragging' : ''}`}
-                    draggable
-                    onDragStart={e => onDragStart(e, task)}
+                    className={`kanban-card${dragging?.id === task.id ? ' kanban-card--dragging' : ''}${projetCloture ? ' kanban-card--locked' : ''}`}
+                    draggable={!projetCloture}
+                    onDragStart={e => !projetCloture && onDragStart(e, task)}
                     onDragEnd={() => setDragging(null)}
                   >
                     <div className="kanban-card__hd">

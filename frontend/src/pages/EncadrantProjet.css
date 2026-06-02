@@ -301,6 +301,46 @@
 /* Utilitaires */
 .ep-empty-sm { font-size: 0.85rem; color: #94a3b8; padding: 0.5rem 0; }
 
+/* Liste jalons étudiant */
+.ep-jalon-list { display: flex; flex-direction: column; gap: 0.6rem; }
+.ep-jalon-item {
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: rgba(255,255,255,0.7);
+  border-radius: 10px; border: 1px solid #f1f5f9;
+  flex-wrap: wrap;
+}
+.ep-jalon-item__dot {
+  width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0;
+}
+.ep-jalon-item__dot--green { background: #16a34a; }
+.ep-jalon-item__dot--blue  { background: #2563eb; }
+.ep-jalon-item__dot--grey  { background: #94a3b8; }
+.ep-jalon-item__info { flex: 1; display: flex; flex-direction: column; }
+.ep-jalon-item__titre { font-size: 0.88rem; font-weight: 500; color: #0f172a; }
+.ep-jalon-item__desc  { font-size: 0.75rem; color: #64748b; }
+.ep-jalon-item__date  { font-size: 0.75rem; color: #94a3b8; }
+
+/* Liste tâches étudiant */
+.ep-tache-list { display: flex; flex-direction: column; gap: 0.5rem; }
+.ep-tache-row {
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 0.6rem 1rem;
+  background: rgba(255,255,255,0.7);
+  border-radius: 10px; border: 1px solid #f1f5f9;
+}
+.ep-tache-row__statut {
+  font-size: 0.72rem; font-weight: 600;
+  padding: 2px 8px; border-radius: 999px;
+}
+.ep-tache-row__statut--grey  { background: #f1f5f9; color: #64748b; }
+.ep-tache-row__statut--blue  { background: rgba(37,99,235,0.1); color: #2563eb; }
+.ep-tache-row__statut--green { background: rgba(22,163,74,0.1); color: #16a34a; }
+.ep-tache-row__statut--red   { background: rgba(220,38,38,0.1); color: #dc2626; }
+.ep-tache-row__titre { flex: 1; font-size: 0.875rem; color: #0f172a; }
+.ep-tache-row__date  { font-size: 0.72rem; color: #94a3b8; }
+.ep-tache-row__date--late { color: #dc2626; font-weight: 600; }
+
 /* badge amber manquant dans Dashboard.css */
 .dash-badge--amber { background: rgba(217,119,6,0.1); color: #d97706; }
 .dash-badge--red   { background: rgba(220,38,38,0.1); color: #dc2626; }
