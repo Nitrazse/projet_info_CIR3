@@ -30,18 +30,26 @@ export async function listPendingDeliverables(req, res) {
   const { page, limit, offset } = getPagination(req.query);
   const { project_id } = req.query;
 
+  // Pour l'encadrant, on récupère d'abord ses project_ids
+  let projectIds = null;
+  if (req.user.role === 'encadrant') {
+    const { data: projects } = await supabaseAdmin
+      .from('projects')
+      .select('id')
+      .eq('encadrant_id', req.user.id);
+    projectIds = (projects ?? []).map(p => p.id);
+    if (projectIds.length === 0) return res.json({ deliverables: [], total: 0, page, limit });
+  }
+
   let query = supabaseAdmin
     .from('deliverables')
-    .select('*, projects(nom, encadrant_id)', { count: 'exact' })
+    .select('*', { count: 'exact' })
     .eq('statut', 'soumis')
     .order('created_at', { ascending: true })
     .range(offset, offset + limit - 1);
 
   if (project_id) query = query.eq('project_id', project_id);
-
-  if (req.user.role === 'encadrant') {
-    query = query.eq('projects.encadrant_id', req.user.id);
-  }
+  if (projectIds) query = query.in('project_id', projectIds);
 
   const { data, error, count } = await query;
 
@@ -122,7 +130,7 @@ export async function getDeliverable(req, res) {
 
   const { data, error } = await supabaseAdmin
     .from('deliverables')
-    .select('*, projects(nom)')
+    .select('*')
     .eq('id', id)
     .single();
 
@@ -161,7 +169,7 @@ export async function updateDeliverableStatus(req, res) {
       valide_at: new Date().toISOString(),
     })
     .eq('id', id)
-    .select('*, projects(nom)')
+    .select('*')
     .single();
 
   if (error || !data) return sendError(res, 404, 'Livrable introuvable');

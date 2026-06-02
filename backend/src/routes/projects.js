@@ -13,6 +13,9 @@ router.get('/', projectsController.listProjects);
 // POST   /api/projects                          — crée un projet (ENCADRANT)
 router.post('/', requireRole(ROLES.ENCADRANT), projectsController.createProject);
 
+// GET    /api/projects/etudiants/disponibles    — étudiants non affectés (ENCADRANT) — AVANT /:id
+router.get('/etudiants/disponibles', requireRole(ROLES.ENCADRANT), projectsController.getEtudiantsDisponibles);
+
 // GET    /api/projects/:id                      — détail complet (membres, tâches, livrables, stats, feedbacks)
 router.get('/:id', projectsController.getProject);
 
@@ -52,11 +55,6 @@ router.patch('/:id/jalons/:jalonId', requireRole(ROLES.ENCADRANT), projectsContr
 
 // DELETE /api/projects/:id/jalons/:jalonId      — supprime un jalon (ENCADRANT)
 router.delete('/:id/jalons/:jalonId', requireRole(ROLES.ENCADRANT), projectsController.deleteJalon);
-
-// ─── ÉTUDIANTS DISPONIBLES ────────────────────────────────────────────────────
-
-// GET    /api/projects/etudiants/disponibles    — étudiants non affectés à un projet actif (ENCADRANT)
-router.get('/etudiants/disponibles', requireRole(ROLES.ENCADRANT), projectsController.getEtudiantsDisponibles);
 
 // ─── TRACKING ────────────────────────────────────────────────────────────────
 

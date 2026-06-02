@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import './Projects.css';
@@ -211,6 +212,9 @@ export default function Projects() {
               )}
 
               <div className="project-card__actions">
+                <Link to={`/projects/${p.id}`} className="btn-sm btn-sm--ghost">
+                  Voir le détail
+                </Link>
                 {canEdit && (
                   <button className="btn-sm btn-sm--ghost" onClick={() => openEdit(p)}>
                     Modifier
