@@ -12,34 +12,54 @@ const ROLE_LABEL = {
 };
 
 const STATUT_LABEL = {
-  en_cours: 'En cours',
-  termine: 'Terminé',
-  archive: 'Archivé',
+  en_cours: 'En cours', termine: 'Terminé', archive: 'Archivé',
+  propose: 'Proposé', valide: 'Validé', en_retard: 'En retard',
+  livre: 'Livré', soutenu: 'Soutenu', cloture: 'Clôturé',
 };
 
 const STATUT_COLOR = {
-  en_cours: 'blue',
-  termine: 'green',
-  archive: 'grey',
+  en_cours: 'blue', termine: 'green', archive: 'grey',
+  propose: 'grey', valide: 'blue', en_retard: 'red',
+  livre: 'green', soutenu: 'green', cloture: 'grey',
+};
+
+const NOTIF_ICON = {
+  livrable_soumis:   '📁',
+  livrable_statue:   '✅',
+  feedback_encadrant:'💬',
+  evaluation_soumise:'⭐',
+  tache_assignee:    '📋',
+  statut_tache:      '🔄',
 };
 
 export default function Dashboard() {
   const { user } = useAuth();
 
-  const [projects, setProjects]   = useState([]);
-  const [tasks, setTasks]         = useState([]);
-  const [loading, setLoading]     = useState(true);
-  const [error, setError]         = useState('');
+  const [projects, setProjects]         = useState([]);
+  const [tasks, setTasks]               = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const [feedbacks, setFeedbacks]       = useState([]);
+  const [loading, setLoading]           = useState(true);
+  const [error, setError]               = useState('');
 
   useEffect(() => {
     async function load() {
       try {
-        const [pRes, tRes] = await Promise.all([
+        const [pRes, tRes, nRes] = await Promise.all([
           api.get('/projects?limit=100'),
           api.get('/tasks?limit=100'),
+          api.get('/notifications?limit=10'),
         ]);
-        setProjects(pRes.data.projects ?? []);
+        const projs = pRes.data.projects ?? [];
+        setProjects(projs);
         setTasks(tRes.data.tasks ?? []);
+        setNotifications(nRes.data.notifications ?? []);
+
+        // Charge les feedbacks du premier projet
+        if (projs.length > 0) {
+          const fRes = await api.get(`/projects/${projs[0].id}/feedbacks?limit=5`);
+          setFeedbacks(fRes.data.feedbacks ?? []);
+        }
       } catch {
         setError('Impossible de charger les données.');
       } finally {
@@ -48,6 +68,16 @@ export default function Dashboard() {
     }
     load();
   }, []);
+
+  async function markAsRead(id) {
+    await api.patch(`/notifications/${id}/read`);
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, lu: true } : n));
+  }
+
+  async function markAllRead() {
+    await api.patch('/notifications/read-all');
+    setNotifications(prev => prev.map(n => ({ ...n, lu: true })));
+  }
 
   const tasksByStatus = {
     a_faire:  tasks.filter(t => t.statut === 'a_faire').length,
@@ -62,7 +92,8 @@ export default function Dashboard() {
     return Math.round((pts.filter(t => t.statut === 'termine').length / pts.length) * 100);
   }
 
-  const recentProjects = [...projects].slice(0, 5);
+  const recentProjects  = [...projects].slice(0, 5);
+  const unreadCount     = notifications.filter(n => !n.lu).length;
 
   return (
     <div className="dashboard">
@@ -117,17 +148,76 @@ export default function Dashboard() {
             )}
           </div>
 
+          {/* Notifications */}
+          {notifications.length > 0 && (
+            <section className="dash-section">
+              <div className="dash-section__hd">
+                <h2 className="dash-section__title">
+                  Notifications
+                  {unreadCount > 0 && (
+                    <span className="dash-notif-badge">{unreadCount}</span>
+                  )}
+                </h2>
+                {unreadCount > 0 && (
+                  <button className="dash-section__more" onClick={markAllRead}>
+                    Tout marquer comme lu
+                  </button>
+                )}
+              </div>
+              <div className="dash-notif-list">
+                {notifications.map(n => (
+                  <div
+                    key={n.id}
+                    className={`dash-notif${n.lu ? ' dash-notif--read' : ''}`}
+                    onClick={() => !n.lu && markAsRead(n.id)}
+                  >
+                    <span className="dash-notif__icon">
+                      {NOTIF_ICON[n.type] ?? '🔔'}
+                    </span>
+                    <div className="dash-notif__body">
+                      <p className="dash-notif__msg">{n.message}</p>
+                      <span className="dash-notif__date">
+                        {new Date(n.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                    {!n.lu && <span className="dash-notif__dot" />}
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Feedbacks encadrant */}
+          {feedbacks.length > 0 && (
+            <section className="dash-section">
+              <h2 className="dash-section__title">Feedbacks de votre encadrant</h2>
+              <div className="dash-feedbacks">
+                {feedbacks.map(f => (
+                  <div key={f.id} className={`dash-feedback dash-feedback--${f.type}`}>
+                    <div className="dash-feedback__hd">
+                      <span className="dash-feedback__type">
+                        {f.type === 'alerte' ? '⚠ Alerte' : f.type === 'avancement' ? '📈 Avancement' : f.type === 'livrable' ? '📁 Livrable' : '💬 Général'}
+                      </span>
+                      <span className="dash-feedback__date">
+                        {new Date(f.created_at).toLocaleDateString('fr-FR')}
+                      </span>
+                    </div>
+                    <p className="dash-feedback__contenu">{f.contenu}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
           {/* Recent projects */}
           <section className="dash-section">
             <div className="dash-section__hd">
               <h2 className="dash-section__title">Projets récents</h2>
               <Link to="/projects" className="dash-section__more">Tout voir</Link>
             </div>
-
             {recentProjects.length === 0 ? (
               <div className="dash-empty">
                 <p>Aucun projet pour le moment.</p>
-                <Link to="/projects" className="dash-empty__link">Créer un projet</Link>
               </div>
             ) : (
               <div className="dash-project-list">
@@ -146,10 +236,7 @@ export default function Dashboard() {
                       )}
                       <div className="dash-progress">
                         <div className="dash-progress__bar">
-                          <div
-                            className="dash-progress__fill"
-                            style={{ width: `${pct}%` }}
-                          />
+                          <div className="dash-progress__fill" style={{ width: `${pct}%` }} />
                         </div>
                         <span className="dash-progress__label">{pct}% des tâches terminées</span>
                       </div>

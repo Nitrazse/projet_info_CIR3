@@ -350,3 +350,95 @@
   color: #64748b;
   font-size: 0.9rem;
 }
+
+/* Notifications */
+.dash-notif-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  background: #dc2626;
+  color: #fff;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  margin-left: 0.5rem;
+}
+
+.dash-notif-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.dash-notif {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: rgba(37,99,235,0.04);
+  border: 1px solid rgba(37,99,235,0.12);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.15s;
+  position: relative;
+}
+
+.dash-notif:hover { background: rgba(37,99,235,0.08); }
+
+.dash-notif--read {
+  background: rgba(255,255,255,0.5);
+  border-color: #f1f5f9;
+  cursor: default;
+  opacity: 0.7;
+}
+
+.dash-notif__icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 1px; }
+
+.dash-notif__body { flex: 1; min-width: 0; }
+
+.dash-notif__msg {
+  font-size: 0.85rem;
+  color: #0f172a;
+  margin: 0 0 0.2rem;
+  font-weight: 500;
+}
+
+.dash-notif--read .dash-notif__msg { font-weight: 400; color: #64748b; }
+
+.dash-notif__date { font-size: 0.72rem; color: #94a3b8; }
+
+.dash-notif__dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #2563eb;
+  flex-shrink: 0;
+  margin-top: 5px;
+}
+
+/* Feedbacks */
+.dash-feedbacks { display: flex; flex-direction: column; gap: 0.75rem; }
+
+.dash-feedback {
+  padding: 0.875rem 1rem;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.7);
+  border-left: 4px solid #e2e8f0;
+}
+
+.dash-feedback--alerte    { border-left-color: #dc2626; background: rgba(220,38,38,0.04); }
+.dash-feedback--avancement { border-left-color: #2563eb; }
+.dash-feedback--livrable  { border-left-color: #d97706; }
+
+.dash-feedback__hd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.4rem;
+}
+
+.dash-feedback__type { font-size: 0.75rem; font-weight: 600; color: #64748b; }
+.dash-feedback__date { font-size: 0.72rem; color: #94a3b8; }
+.dash-feedback__contenu { font-size: 0.875rem; color: #334155; margin: 0; }
