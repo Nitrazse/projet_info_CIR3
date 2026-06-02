@@ -155,6 +155,10 @@ export default function EncadrantProjet() {
   const [error, setError]         = useState('');
   const [activeTab, setActiveTab] = useState(0);
   const [refresh, setRefresh]     = useState(0);
+  const [taskModal, setTaskModal] = useState(false);
+  const [taskForm, setTaskForm]   = useState({ titre: '', description: '', date_echeance: '' });
+  const [taskErr, setTaskErr]     = useState('');
+  const [taskSaving, setTaskSaving] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -176,6 +180,28 @@ export default function EncadrantProjet() {
   }, [id, refresh]);
 
   function reload() { setRefresh(r => r + 1); }
+
+  async function handleCreateTask(e) {
+    e.preventDefault();
+    if (!taskForm.titre.trim()) { setTaskErr('Le titre est requis.'); return; }
+    setTaskSaving(true); setTaskErr('');
+    try {
+      await api.post('/tasks', {
+        project_id: id,
+        titre: taskForm.titre.trim(),
+        description: taskForm.description.trim() || undefined,
+        date_echeance: taskForm.date_echeance || undefined,
+        statut: 'a_faire',
+      });
+      setTaskModal(false);
+      setTaskForm({ titre: '', description: '', date_echeance: '' });
+      reload();
+    } catch (err) {
+      setTaskErr(err.response?.data?.error ?? 'Erreur lors de la création.');
+    } finally {
+      setTaskSaving(false);
+    }
+  }
 
   if (loading) return <div className="dash-loading">Chargement…</div>;
   if (error)   return <p className="dash-error">{error}</p>;
@@ -202,9 +228,18 @@ export default function EncadrantProjet() {
         <div className="ep-banner__left">
           <div className="ep-banner__hd">
             <h1 className="ep-banner__title">{project.nom}</h1>
-            <span className={`dash-badge dash-badge--${STATUT_COLOR[project.statut] ?? 'grey'}`}>
-              {STATUT_LABEL[project.statut] ?? project.statut}
-            </span>
+            <select
+              className="ep-statut-select"
+              value={project.statut}
+              onChange={async e => {
+                await api.patch(`/projects/${id}`, { statut: e.target.value });
+                reload();
+              }}
+            >
+              {Object.entries(STATUT_LABEL).map(([val, label]) => (
+                <option key={val} value={val}>{label}</option>
+              ))}
+            </select>
           </div>
           {project.description && (
             <p className="ep-banner__desc">{project.description}</p>
@@ -318,10 +353,19 @@ export default function EncadrantProjet() {
           </div>
         )}
 
-        {/* TÂCHES — Kanban lecture seule */}
+        {/* TÂCHES */}
         {activeTab === 1 && (
           <section className="dash-section">
-            <h2 className="dash-section__title">Tâches de l'équipe</h2>
+            <div className="dash-section__hd">
+              <h2 className="dash-section__title">Tâches de l'équipe</h2>
+              {['cloture', 'soutenu'].includes(project.statut) ? (
+                <span className="ep-locked-hint">🔒 Projet clôturé</span>
+              ) : (
+                <button className="ep-add-task-btn" onClick={() => setTaskModal(true)}>
+                  + Nouvelle tâche
+                </button>
+              )}
+            </div>
             <KanbanReadOnly taches={project.taches ?? []} />
           </section>
         )}
@@ -422,6 +466,50 @@ export default function EncadrantProjet() {
           </section>
         )}
       </div>
+
+      {/* Modale nouvelle tâche */}
+      {taskModal && (
+        <div className="modal-overlay" onClick={() => setTaskModal(false)}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <div className="modal__hd">
+              <h2 className="modal__title">Nouvelle tâche</h2>
+              <button className="modal__close" onClick={() => setTaskModal(false)}>
+                <svg viewBox="0 0 20 20" fill="currentColor" width="20" height="20">
+                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </button>
+            </div>
+            {taskErr && <p className="modal__error">{taskErr}</p>}
+            <form onSubmit={handleCreateTask} className="modal__form" noValidate>
+              <div className="fld">
+                <label className="fld__label" htmlFor="t-titre">Titre *</label>
+                <input id="t-titre" className="fld__input" value={taskForm.titre}
+                  onChange={e => setTaskForm(f => ({ ...f, titre: e.target.value }))}
+                  placeholder="Ex: Rédiger le rapport final" />
+              </div>
+              <div className="fld">
+                <label className="fld__label" htmlFor="t-desc">Description</label>
+                <textarea id="t-desc" className="fld__input fld__textarea" rows={3}
+                  value={taskForm.description}
+                  onChange={e => setTaskForm(f => ({ ...f, description: e.target.value }))}
+                  placeholder="Détails de la tâche…" />
+              </div>
+              <div className="fld">
+                <label className="fld__label" htmlFor="t-date">Date d'échéance</label>
+                <input id="t-date" className="fld__input" type="date"
+                  value={taskForm.date_echeance}
+                  onChange={e => setTaskForm(f => ({ ...f, date_echeance: e.target.value }))} />
+              </div>
+              <div className="modal__ft">
+                <button type="button" className="btn btn--ghost" onClick={() => setTaskModal(false)}>Annuler</button>
+                <button type="submit" className="btn btn--primary" disabled={taskSaving}>
+                  {taskSaving ? 'Création…' : 'Créer la tâche'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

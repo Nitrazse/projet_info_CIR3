@@ -267,6 +267,37 @@
 .ep-eval-row__info { display: flex; align-items: center; gap: 0.75rem; }
 .ep-eval-row__date { font-size: 0.75rem; color: #94a3b8; }
 
+/* Bouton nouvelle tâche */
+.ep-add-task-btn {
+  padding: 0.4rem 1rem;
+  border: 1px solid #2563eb;
+  border-radius: 8px;
+  background: rgba(37,99,235,0.08);
+  color: #2563eb;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.ep-add-task-btn:hover { background: rgba(37,99,235,0.15); }
+
+.ep-statut-select {
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid #e2e8f0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  background: #f8fafc;
+  color: #0f172a;
+  cursor: pointer;
+}
+
+.ep-locked-hint {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
 /* Utilitaires */
 .ep-empty-sm { font-size: 0.85rem; color: #94a3b8; padding: 0.5rem 0; }
 

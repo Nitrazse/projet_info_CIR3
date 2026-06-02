@@ -2,18 +2,30 @@ import { supabaseAdmin } from '../config/supabase.js';
 import { sendError, getPagination } from '../utils/index.js';
 import { createNotification } from './notifications.js';
 
-// Liste les projets — les étudiants/team_leaders ne voient que les leurs via project_members
+// Liste les projets — encadrant voit ses projets via encadrant_id, étudiants via project_members
 export async function listProjects(req, res) {
   const { page, limit, offset } = getPagination(req.query);
   const { role, id: userId } = req.user;
 
-  let query = supabaseAdmin.from('projects').select('*, project_members!inner(user_id)', { count: 'exact' });
+  let query;
 
-  if (role === 'etudiant' || role === 'team_leader') {
-    query = query.eq('project_members.user_id', userId);
+  if (role === 'encadrant' || role === 'jury') {
+    // Encadrant : projets où il est l'encadrant
+    query = supabaseAdmin
+      .from('projects')
+      .select('*', { count: 'exact' })
+      .eq('encadrant_id', userId);
+  } else {
+    // Étudiant / team_leader : projets où il est membre
+    query = supabaseAdmin
+      .from('projects')
+      .select('*, project_members!inner(user_id)', { count: 'exact' })
+      .eq('project_members.user_id', userId);
   }
 
-  const { data, error, count } = await query.range(offset, offset + limit - 1);
+  const { data, error, count } = await query
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1);
 
   if (error) return sendError(res, 500, error.message);
 
