@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import './Register.css';
-
-const IS_DEV = import.meta.env.DEV;
 
 const PANEL = {
   etudiant:  { theme: 'blue',  title: 'Bienvenue sur PFA3',     sub: 'Gère tes projets, collabore avec ton équipe et rends tes livrables sereinement.' },
@@ -21,16 +20,14 @@ function getRoleFromEmail(email) {
     (email.endsWith('@junia.com') && !email.endsWith('@student.junia.com')) ||
     email.endsWith('@ext.junia.com')
   ) return 'encadrant';
-  if (IS_DEV && email.endsWith('@gmail.com')) return 'encadrant';
   return null;
 }
 
-const EMAIL_HINT = IS_DEV
-  ? 'Adresse requise : @student.junia.com, @junia.com, @ext.junia.com ou @gmail.com (dev)'
-  : 'Adresse requise : @student.junia.com, @junia.com ou @ext.junia.com';
+const EMAIL_HINT = 'Adresse requise : @student.junia.com, @junia.com ou @ext.junia.com';
 
 export default function Register() {
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const [form, setForm]         = useState({ nom: '', email: '', password: '', confirm: '' });
   const [errors, setErrors]     = useState({});
@@ -55,8 +52,8 @@ export default function Register() {
     } else if (!getRoleFromEmail(form.email.trim())) {
       e.email = 'Domaine non reconnu. Utilisez @student.junia.com, @junia.com ou @ext.junia.com';
     }
-    if (form.password.length < 8)         e.password = 'Minimum 8 caractères.';
-    if (form.password !== form.confirm)   e.confirm  = 'Les mots de passe ne correspondent pas.';
+    if (form.password.length < 8)       e.password = 'Minimum 8 caractères.';
+    if (form.password !== form.confirm) e.confirm  = 'Les mots de passe ne correspondent pas.';
     return e;
   }
 
@@ -68,15 +65,14 @@ export default function Register() {
 
     setLoading(true);
     try {
-      await api.post('/auth/register', {
+      const { data } = await api.post('/auth/register', {
         nom:      form.nom.trim(),
         email:    form.email.trim(),
         password: form.password,
       });
-      navigate(
-        `/verify-otp?email=${encodeURIComponent(form.email.trim())}`,
-        { state: { password: form.password } }
-      );
+
+      login(data.user, data.token);
+      navigate(data.user.role === 'encadrant' ? '/encadrant/dashboard' : '/dashboard');
     } catch (err) {
       setApiError(err.response?.data?.error ?? 'Une erreur est survenue.');
     } finally {

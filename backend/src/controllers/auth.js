@@ -1,8 +1,5 @@
 import { supabaseAdmin, createUserClient } from '../config/supabase.js';
 import { sendError } from '../utils/index.js';
-import { sendOtpEmail } from '../services/mailer.js';
-
-const OTP_TTL_MS = 3 * 60 * 1000;
 
 function getRoleFromEmail(email) {
   if (email.endsWith('@student.junia.com')) return 'etudiant';
@@ -10,12 +7,7 @@ function getRoleFromEmail(email) {
     (email.endsWith('@junia.com') && !email.endsWith('@student.junia.com')) ||
     email.endsWith('@ext.junia.com')
   ) return 'encadrant';
-  if (process.env.NODE_ENV === 'development' && email.endsWith('@gmail.com')) return 'encadrant';
   return null;
-}
-
-function generateCode() {
-  return String(Math.floor(1000 + Math.random() * 9000));
 }
 
 export async function register(req, res) {
@@ -28,95 +20,30 @@ export async function register(req, res) {
   if (!role)
     return sendError(res, 400, 'Domaine email non autorisé. Utilisez une adresse @student.junia.com, @junia.com ou @ext.junia.com');
 
-  const { data, error } = await supabaseAdmin.auth.admin.createUser({
+  const { error: createError } = await supabaseAdmin.auth.admin.createUser({
     email,
     password,
     user_metadata: { role, nom },
-    email_confirm: false,
+    email_confirm: true,
   });
 
-  if (error) return sendError(res, 400, error.message);
+  if (createError) return sendError(res, 400, createError.message);
 
-  await supabaseAdmin.from('otp_codes').delete().eq('email', email);
+  // Connexion automatique immédiate après création
+  const { data, error: loginError } = await supabaseAdmin.auth.signInWithPassword({ email, password });
 
-  const code = generateCode();
-  const expiresAt = new Date(Date.now() + OTP_TTL_MS).toISOString();
-  await supabaseAdmin
-    .from('otp_codes')
-    .insert({ user_id: data.user.id, email, code, expires_at: expiresAt });
-
-  try {
-    await sendOtpEmail(email, code);
-  } catch (mailErr) {
-    console.error('Erreur envoi email OTP:', mailErr.message);
-  }
+  if (loginError || !data.session)
+    return sendError(res, 400, 'Compte créé mais connexion automatique impossible. Connectez-vous manuellement.');
 
   return res.status(201).json({
-    message: 'Compte créé. Un code de vérification à 4 chiffres a été envoyé.',
-    email,
-    role,
+    token: data.session.access_token,
+    user: {
+      id:    data.user.id,
+      email: data.user.email,
+      role,
+      nom,
+    },
   });
-}
-
-export async function verifyOtp(req, res) {
-  const { email, code } = req.body;
-  if (!email || !code) return sendError(res, 400, 'email et code sont obligatoires');
-
-  const { data: record, error } = await supabaseAdmin
-    .from('otp_codes')
-    .select('*')
-    .eq('email', email)
-    .eq('code', String(code))
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .single();
-
-  if (error || !record) return sendError(res, 400, 'Code invalide');
-  if (new Date() > new Date(record.expires_at))
-    return sendError(res, 400, 'Code expiré. Cliquez sur "Renvoyer un code".');
-
-  await supabaseAdmin.auth.admin.updateUserById(record.user_id, { email_confirm: true });
-  await supabaseAdmin.from('otp_codes').delete().eq('id', record.id);
-
-  return res.json({ verified: true, email: record.email });
-}
-
-export async function resendOtp(req, res) {
-  const { email } = req.body;
-  if (!email) return sendError(res, 400, 'email est obligatoire');
-
-  let userId;
-  const { data: existing } = await supabaseAdmin
-    .from('otp_codes')
-    .select('user_id')
-    .eq('email', email)
-    .limit(1)
-    .single();
-
-  if (existing?.user_id) {
-    userId = existing.user_id;
-  } else {
-    const { data: { users } } = await supabaseAdmin.auth.admin.listUsers();
-    const user = users.find(u => u.email === email);
-    if (!user) return sendError(res, 404, 'Aucun compte trouvé pour cet email');
-    userId = user.id;
-  }
-
-  await supabaseAdmin.from('otp_codes').delete().eq('email', email);
-
-  const code = generateCode();
-  const expiresAt = new Date(Date.now() + OTP_TTL_MS).toISOString();
-  await supabaseAdmin
-    .from('otp_codes')
-    .insert({ user_id: userId, email, code, expires_at: expiresAt });
-
-  try {
-    await sendOtpEmail(email, code);
-  } catch (mailErr) {
-    return sendError(res, 500, "Impossible d'envoyer l'email.");
-  }
-
-  return res.json({ message: 'Nouveau code envoyé. Il expire dans 3 minutes.' });
 }
 
 export async function login(req, res) {
@@ -133,10 +60,10 @@ export async function login(req, res) {
   return res.json({
     token: data.session.access_token,
     user: {
-      id: data.user.id,
+      id:    data.user.id,
       email: data.user.email,
-      role: data.user.user_metadata?.role ?? 'etudiant',
-      nom: data.user.user_metadata?.nom,
+      role:  data.user.user_metadata?.role ?? 'etudiant',
+      nom:   data.user.user_metadata?.nom,
     },
   });
 }
