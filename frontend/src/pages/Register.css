@@ -199,6 +199,11 @@
   color: #6b7280;
 }
 
+.rfield__role-badge {
+  font-size: 0.78rem;
+  color: #16a34a;
+}
+
 /* ── Bouton submit ── */
 .register__submit {
   margin-top: 0.25rem;

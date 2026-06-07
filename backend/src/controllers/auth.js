@@ -2,22 +2,15 @@ import { supabaseAdmin, createUserClient } from '../config/supabase.js';
 import { sendError } from '../utils/index.js';
 import { sendOtpEmail } from '../services/mailer.js';
 
-const ALLOWED_ROLES = ['etudiant', 'team_leader', 'encadrant', 'jury'];
 const OTP_TTL_MS = 3 * 60 * 1000;
 
-function validateEmailForRole(email, role) {
-  if (process.env.NODE_ENV === 'development' && email.endsWith('@gmail.com')) return null;
-
-  if (['etudiant', 'team_leader'].includes(role)) {
-    if (!email.endsWith('@student.junia.com'))
-      return 'Les étudiants et team leaders doivent utiliser une adresse @student.junia.com';
-  } else if (['encadrant', 'jury'].includes(role)) {
-    const valid =
-      (email.endsWith('@junia.com') && !email.endsWith('@student.junia.com')) ||
-      email.endsWith('@ext.junia.com');
-    if (!valid)
-      return 'Les encadrants et jurys doivent utiliser une adresse @junia.com ou @ext.junia.com';
-  }
+function getRoleFromEmail(email) {
+  if (email.endsWith('@student.junia.com')) return 'etudiant';
+  if (
+    (email.endsWith('@junia.com') && !email.endsWith('@student.junia.com')) ||
+    email.endsWith('@ext.junia.com')
+  ) return 'encadrant';
+  if (process.env.NODE_ENV === 'development' && email.endsWith('@gmail.com')) return 'encadrant';
   return null;
 }
 
@@ -26,15 +19,14 @@ function generateCode() {
 }
 
 export async function register(req, res) {
-  const { email, password, role = 'etudiant', nom } = req.body;
+  const { email, password, nom } = req.body;
 
   if (!email || !password || !nom)
     return sendError(res, 400, 'email, password et nom sont obligatoires');
-  if (!ALLOWED_ROLES.includes(role))
-    return sendError(res, 400, `Rôle invalide. Valeurs acceptées : ${ALLOWED_ROLES.join(', ')}`);
 
-  const emailError = validateEmailForRole(email, role);
-  if (emailError) return sendError(res, 400, emailError);
+  const role = getRoleFromEmail(email);
+  if (!role)
+    return sendError(res, 400, 'Domaine email non autorisé. Utilisez une adresse @student.junia.com, @junia.com ou @ext.junia.com');
 
   const { data, error } = await supabaseAdmin.auth.admin.createUser({
     email,
@@ -62,6 +54,7 @@ export async function register(req, res) {
   return res.status(201).json({
     message: 'Compte créé. Un code de vérification à 4 chiffres a été envoyé.',
     email,
+    role,
   });
 }
 

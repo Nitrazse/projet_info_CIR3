@@ -1,63 +1,44 @@
 import { useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import './Register.css';
 
-const ROLES = [
-  { value: 'etudiant',    label: 'Étudiant' },
-  { value: 'team_leader', label: 'Chef d\'équipe' },
-  { value: 'encadrant',   label: 'Encadrant' },
-  { value: 'jury',        label: 'Jury' },
-];
-
-const PANEL = {
-  etudiant:    { theme: 'blue',  title: 'Bienvenue sur PFA3',         sub: 'Gère tes projets, collabore avec ton équipe et rends tes livrables sereinement.' },
-  team_leader: { theme: 'blue',  title: 'Bienvenue sur PFA3',         sub: 'Pilote ton équipe et suis l\'avancement de votre projet en temps réel.' },
-  encadrant:   { theme: 'amber', title: 'Votre espace enseignant',     sub: 'Supervisez vos groupes, évaluez les livrables et identifiez les retards en un coup d\'œil.' },
-  jury:        { theme: 'amber', title: 'Votre espace jury',           sub: 'Accédez aux projets qui vous sont assignés et gérez vos évaluations depuis un tableau de bord dédié.' },
-};
-
 const IS_DEV = import.meta.env.DEV;
 
-function validateEmailForRole(email, role) {
-  if (IS_DEV && email.endsWith('@gmail.com')) return null;
+const PANEL = {
+  etudiant:  { theme: 'blue',  title: 'Bienvenue sur PFA3',     sub: 'Gère tes projets, collabore avec ton équipe et rends tes livrables sereinement.' },
+  encadrant: { theme: 'amber', title: 'Votre espace enseignant', sub: 'Supervisez vos groupes, évaluez les livrables et identifiez les retards en un coup d\'œil.' },
+};
 
-  if (['etudiant', 'team_leader'].includes(role)) {
-    if (!email.endsWith('@student.junia.com'))
-      return 'Les étudiants et team leaders doivent utiliser une adresse @student.junia.com';
-  } else if (['encadrant', 'jury'].includes(role)) {
-    const valid =
-      (email.endsWith('@junia.com') && !email.endsWith('@student.junia.com')) ||
-      email.endsWith('@ext.junia.com');
-    if (!valid)
-      return 'Les encadrants et jurys doivent utiliser une adresse @junia.com ou @ext.junia.com';
-  }
+const ROLE_LABELS = {
+  etudiant:  'Étudiant',
+  encadrant: 'Encadrant',
+};
+
+function getRoleFromEmail(email) {
+  if (email.endsWith('@student.junia.com')) return 'etudiant';
+  if (
+    (email.endsWith('@junia.com') && !email.endsWith('@student.junia.com')) ||
+    email.endsWith('@ext.junia.com')
+  ) return 'encadrant';
+  if (IS_DEV && email.endsWith('@gmail.com')) return 'encadrant';
   return null;
 }
 
-function getEmailHint(role) {
-  const base = ['etudiant', 'team_leader'].includes(role)
-    ? 'Adresse requise : …@student.junia.com'
-    : ['encadrant', 'jury'].includes(role)
-    ? 'Adresse requise : …@junia.com ou …@ext.junia.com'
-    : null;
-  if (!base) return null;
-  return IS_DEV ? `${base} (ou @gmail.com en dev)` : base;
-}
+const EMAIL_HINT = IS_DEV
+  ? 'Adresse requise : @student.junia.com, @junia.com, @ext.junia.com ou @gmail.com (dev)'
+  : 'Adresse requise : @student.junia.com, @junia.com ou @ext.junia.com';
 
 export default function Register() {
-  const [params] = useSearchParams();
-  const navigate  = useNavigate();
+  const navigate = useNavigate();
 
-  const initialRole = ROLES.find(r => r.value === params.get('role'))?.value ?? 'etudiant';
-
-  const [form, setForm]     = useState({ nom: '', email: '', password: '', confirm: '', role: initialRole });
-  const [errors, setErrors] = useState({});
+  const [form, setForm]         = useState({ nom: '', email: '', password: '', confirm: '' });
+  const [errors, setErrors]     = useState({});
   const [apiError, setApiError] = useState('');
   const [loading, setLoading]   = useState(false);
 
-  const panel    = PANEL[form.role] ?? PANEL.etudiant;
-  const emailHint = getEmailHint(form.role);
+  const detectedRole = getRoleFromEmail(form.email.trim());
+  const panel = PANEL[detectedRole] ?? PANEL.etudiant;
 
   function set(field) {
     return (e) => {
@@ -68,14 +49,14 @@ export default function Register() {
 
   function validate() {
     const e = {};
-    if (!form.nom.trim())          e.nom      = 'Le nom est requis.';
-    if (!form.email.trim())        e.email    = 'L\'email est requis.';
-    else {
-      const emailError = validateEmailForRole(form.email.trim(), form.role);
-      if (emailError) e.email = emailError;
+    if (!form.nom.trim()) e.nom = 'Le nom est requis.';
+    if (!form.email.trim()) {
+      e.email = 'L\'email est requis.';
+    } else if (!getRoleFromEmail(form.email.trim())) {
+      e.email = 'Domaine non reconnu. Utilisez @student.junia.com, @junia.com ou @ext.junia.com';
     }
-    if (form.password.length < 8)  e.password = 'Minimum 8 caractères.';
-    if (form.password !== form.confirm) e.confirm = 'Les mots de passe ne correspondent pas.';
+    if (form.password.length < 8)         e.password = 'Minimum 8 caractères.';
+    if (form.password !== form.confirm)   e.confirm  = 'Les mots de passe ne correspondent pas.';
     return e;
   }
 
@@ -91,7 +72,6 @@ export default function Register() {
         nom:      form.nom.trim(),
         email:    form.email.trim(),
         password: form.password,
-        role:     form.role,
       });
       navigate(
         `/verify-otp?email=${encodeURIComponent(form.email.trim())}`,
@@ -145,26 +125,28 @@ export default function Register() {
               {errors.nom && <span className="rfield__msg">{errors.nom}</span>}
             </div>
 
-            {/* Email */}
+            {/* Email — le rôle est déduit du domaine */}
             <div className={`rfield${errors.email ? ' rfield--error' : ''}`}>
               <label className="rfield__label" htmlFor="email">Adresse e-mail</label>
               <input
                 id="email"
                 className="rfield__input"
                 type="email"
-                placeholder="marc.aurelle@junia.com"
+                placeholder="prenom.nom@student.junia.com"
                 value={form.email}
                 onChange={set('email')}
                 autoComplete="email"
               />
-              {emailHint && !errors.email && (
-                <span className="rfield__hint">{emailHint}</span>
+              {!errors.email && detectedRole && (
+                <span className="rfield__role-badge">
+                  Rôle détecté : <strong>{ROLE_LABELS[detectedRole]}</strong>
+                </span>
+              )}
+              {!errors.email && !detectedRole && (
+                <span className="rfield__hint">{EMAIL_HINT}</span>
               )}
               {errors.email && <span className="rfield__msg">{errors.email}</span>}
             </div>
-
-            {/* Rôle — masqué, déjà déterminé par le lien d'inscription */}
-            <input type="hidden" value={form.role} />
 
             {/* Mot de passe */}
             <div className={`rfield${errors.password ? ' rfield--error' : ''}`}>
