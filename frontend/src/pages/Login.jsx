@@ -28,7 +28,9 @@ export default function Login() {
     try {
       const { data } = await api.post('/auth/login', form);
       login(data.user, data.token);
-      navigate('/dashboard');
+      const role = data.user.role;
+      if (role === 'encadrant') navigate('/encadrant/dashboard');
+      else navigate('/dashboard');
     } catch {
       setError('Identifiants incorrects.');
     } finally {

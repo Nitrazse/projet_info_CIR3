@@ -16,11 +16,19 @@ import EncadrantLivrables from './pages/EncadrantLivrables';
 import EncadrantEvaluation from './pages/EncadrantEvaluation';
 import EncadrantProjets from './pages/EncadrantProjets';
 import ProjetDetail from './pages/ProjetDetail';
+import Progress from './pages/Progress';
 
 // Protège les routes : redirige vers /login si non connecté
 function PrivateRoute({ children }) {
   const { user } = useAuth();
   return user ? children : <Navigate to="/login" replace />;
+}
+
+// Redirige automatiquement vers le bon dashboard selon le rôle
+function DashboardRedirect() {
+  const { user } = useAuth();
+  if (user?.role === 'encadrant') return <Navigate to="/encadrant/dashboard" replace />;
+  return <Navigate to="/dashboard" replace />;
 }
 
 export default function App() {
@@ -43,10 +51,12 @@ export default function App() {
             }
           >
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/home" element={<DashboardRedirect />} />
             <Route path="/projects" element={<Projects />} />
             <Route path="/tasks" element={<Tasks />} />
             <Route path="/deliverables" element={<Deliverables />} />
             <Route path="/evaluation" element={<Evaluation />} />
+            <Route path="/progress" element={<Progress />} />
             {/* Routes encadrant */}
             <Route path="/encadrant/dashboard" element={<EncadrantDashboard />} />
             <Route path="/encadrant/projets/:id" element={<EncadrantProjet />} />

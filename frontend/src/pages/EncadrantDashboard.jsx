@@ -109,47 +109,6 @@ export default function EncadrantDashboard() {
             </div>
           </div>
 
-          {/* Distribution santé */}
-          <section className="dash-section">
-            <h2 className="dash-section__title">Distribution de l'état de santé</h2>
-            <div className="enc-health-dist">
-              <div className="enc-health-dist__bar">
-                {distribution.bon > 0 && (
-                  <div
-                    className="enc-health-dist__seg enc-health-dist__seg--green"
-                    style={{ flex: distribution.bon }}
-                    title={`Bon : ${distribution.bon}`}
-                  />
-                )}
-                {distribution.moyen > 0 && (
-                  <div
-                    className="enc-health-dist__seg enc-health-dist__seg--amber"
-                    style={{ flex: distribution.moyen }}
-                    title={`Moyen : ${distribution.moyen}`}
-                  />
-                )}
-                {distribution.critique > 0 && (
-                  <div
-                    className="enc-health-dist__seg enc-health-dist__seg--red"
-                    style={{ flex: distribution.critique }}
-                    title={`Critique : ${distribution.critique}`}
-                  />
-                )}
-              </div>
-              <div className="enc-health-dist__legend">
-                <span className="enc-health-dist__leg enc-health-dist__leg--green">
-                  Bon ({distribution.bon})
-                </span>
-                <span className="enc-health-dist__leg enc-health-dist__leg--amber">
-                  Moyen ({distribution.moyen})
-                </span>
-                <span className="enc-health-dist__leg enc-health-dist__leg--red">
-                  Critique ({distribution.critique})
-                </span>
-              </div>
-            </div>
-          </section>
-
           {/* Liste projets */}
           <section className="dash-section">
             <div className="dash-section__hd">

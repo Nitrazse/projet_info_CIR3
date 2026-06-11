@@ -20,7 +20,46 @@ const TASK_STATUT_COLOR = {
 const LIVRABLE_STATUT_LABEL = { soumis: 'Soumis', valide: 'Validé', rejete: 'Rejeté' };
 const LIVRABLE_STATUT_COLOR = { soumis: 'amber', valide: 'green', rejete: 'red' };
 
-const TABS = ['Vue d\'ensemble', 'Tâches', 'Livrables', 'Feedbacks encadrant'];
+const JALON_STATUT_COLOR = {
+  a_faire: 'grey', en_cours: 'blue', termine: 'green', abandonne: 'red',
+};
+
+// ── Mini-Gantt jalons ────────────────────────────────────────────────────────
+function MiniGantt({ jalons, dateDebut, dateFin }) {
+  if (!jalons?.length) return <p className="ep-empty-sm">Aucun jalon défini.</p>;
+
+  const start = new Date(dateDebut || jalons[0]?.date_echeance);
+  const end   = new Date(dateFin   || jalons[jalons.length - 1]?.date_echeance);
+  const total = Math.max(end - start, 1);
+  const today = new Date();
+
+  return (
+    <div className="ep-gantt">
+      {jalons.map(j => {
+        const jDate  = new Date(j.date_echeance);
+        const offset = Math.max(0, Math.min(100, ((jDate - start) / total) * 100));
+        const isPast = jDate < today && j.statut !== 'termine';
+        return (
+          <div key={j.id} className="ep-gantt__row">
+            <span className="ep-gantt__label">{j.titre}</span>
+            <div className="ep-gantt__track">
+              <div
+                className={`ep-gantt__marker ep-gantt__marker--${JALON_STATUT_COLOR[j.statut] ?? 'grey'}${isPast ? ' ep-gantt__marker--late' : ''}`}
+                style={{ left: `${offset}%` }}
+                title={new Date(j.date_echeance).toLocaleDateString('fr-FR')}
+              />
+            </div>
+            <span className="ep-gantt__date">
+              {new Date(j.date_echeance).toLocaleDateString('fr-FR')}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+const TABS = ['Vue d\'ensemble', 'Gantt', 'Tâches', 'Livrables', 'Feedbacks encadrant'];
 
 export default function ProjetDetail() {
   const { id } = useParams();
@@ -118,7 +157,7 @@ export default function ProjetDetail() {
 
       <div className="ep-tab-content">
 
-        {/* VUE D'ENSEMBLE */}
+        {/* VUE D'ENSEMBLE — tab 0 */}
         {activeTab === 0 && (
           <div className="ep-overview">
             <section className="dash-section">
@@ -129,16 +168,13 @@ export default function ProjetDetail() {
                 <div className="ep-jalon-list">
                   {jalons.map(j => (
                     <div key={j.id} className="ep-jalon-item">
-                      <div className={`ep-jalon-item__dot ep-jalon-item__dot--${j.statut === 'termine' ? 'green' : j.statut === 'en_cours' ? 'blue' : 'grey'}`} />
+                      <div className={`ep-jalon-item__dot ep-jalon-item__dot--${JALON_STATUT_COLOR[j.statut] ?? 'grey'}`} />
                       <div className="ep-jalon-item__info">
                         <span className="ep-jalon-item__titre">{j.titre}</span>
                         {j.description && <span className="ep-jalon-item__desc">{j.description}</span>}
                       </div>
                       <span className="ep-jalon-item__date">
                         {new Date(j.date_echeance).toLocaleDateString('fr-FR')}
-                      </span>
-                      <span className={`dash-badge dash-badge--${j.statut === 'termine' ? 'green' : j.statut === 'en_cours' ? 'blue' : 'grey'}`}>
-                        {j.statut === 'termine' ? 'Terminé' : j.statut === 'en_cours' ? 'En cours' : 'À faire'}
                       </span>
                     </div>
                   ))}
@@ -148,8 +184,16 @@ export default function ProjetDetail() {
           </div>
         )}
 
-        {/* TÂCHES */}
+        {/* GANTT — tab 1 */}
         {activeTab === 1 && (
+          <section className="dash-section">
+            <h2 className="dash-section__title">Calendrier du projet</h2>
+            <MiniGantt jalons={jalons} dateDebut={project.date_debut} dateFin={project.date_fin} />
+          </section>
+        )}
+
+        {/* TÂCHES — tab 2 */}
+        {activeTab === 2 && (
           <section className="dash-section">
             <div className="dash-section__hd">
               <h2 className="dash-section__title">Tâches</h2>
@@ -177,8 +221,8 @@ export default function ProjetDetail() {
           </section>
         )}
 
-        {/* LIVRABLES */}
-        {activeTab === 2 && (
+        {/* LIVRABLES — tab 3 */}
+        {activeTab === 3 && (
           <section className="dash-section">
             <div className="dash-section__hd">
               <h2 className="dash-section__title">Livrables</h2>
@@ -213,8 +257,8 @@ export default function ProjetDetail() {
           </section>
         )}
 
-        {/* FEEDBACKS ENCADRANT */}
-        {activeTab === 3 && (
+        {/* FEEDBACKS ENCADRANT — tab 4 */}
+        {activeTab === 4 && (
           <section className="dash-section">
             <h2 className="dash-section__title">Feedbacks de l'encadrant</h2>
             {project.feedbacks?.length === 0 ? (

@@ -1,0 +1,145 @@
+.progress-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.progress-selector {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.progress-select {
+  min-width: 260px;
+}
+
+/* KPI cards */
+.progress-kpis {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.progress-kpi {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-top: 4px solid #2563eb;
+  border-radius: 12px;
+  padding: 1.2rem 1.5rem;
+  min-width: 140px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+
+.progress-kpi__value {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1e293b;
+  line-height: 1;
+}
+
+.progress-kpi__label {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+/* Charts grid */
+.progress-charts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.progress-chart-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 1.25rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+
+.progress-chart-card--wide {
+  grid-column: 1 / -1;
+}
+
+.progress-chart-card__title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 0.75rem;
+}
+
+.progress-empty {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  text-align: center;
+  padding: 2rem 0;
+}
+
+/* Jauge radiale */
+.progress-radial-wrapper {
+  position: relative;
+}
+
+.progress-radial-label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -10%);
+  font-size: 1.8rem;
+  font-weight: 700;
+}
+
+/* Tâches en retard */
+.progress-retard-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.progress-retard-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.65rem 1rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  flex-wrap: wrap;
+}
+
+.progress-retard-row__titre {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1e293b;
+  flex: 1;
+}
+
+.progress-retard-row__statut {
+  font-size: 0.75rem;
+  color: #dc2626;
+  background: rgba(220,38,38,0.08);
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.progress-retard-row__date {
+  font-size: 0.78rem;
+  color: #94a3b8;
+}
+
+@media (max-width: 640px) {
+  .progress-charts {
+    grid-template-columns: 1fr;
+  }
+  .progress-chart-card--wide {
+    grid-column: 1;
+  }
+}
