@@ -382,27 +382,8 @@ export async function deleteJalon(req, res) {
 
 // ─── ÉTUDIANTS DISPONIBLES ────────────────────────────────────────────────────
 
-// Retourne les étudiants non affectés à un projet en cours (statut en_cours ou valide)
+// Retourne tous les étudiants — un étudiant peut être dans plusieurs projets
 export async function getEtudiantsDisponibles(req, res) {
-  // Récupère les user_id déjà dans un projet actif
-  const { data: projetsActifs } = await supabaseAdmin
-    .from('projects')
-    .select('id')
-    .in('statut', ['valide', 'en_cours', 'en_retard']);
-
-  const projectIds = projetsActifs?.map(p => p.id) ?? [];
-
-  let occupesIds = [];
-  if (projectIds.length > 0) {
-    const { data: membresOccupes } = await supabaseAdmin
-      .from('project_members')
-      .select('user_id')
-      .in('project_id', projectIds)
-      .in('role', ['etudiant', 'team_leader']);
-    occupesIds = [...new Set(membresOccupes?.map(m => m.user_id) ?? [])];
-  }
-
-  // Récupère tous les utilisateurs avec rôle étudiant ou team_leader
   const { data: tousEtudiants, error } = await supabaseAdmin
     .from('users_view')
     .select('id, email, nom, role')
@@ -410,9 +391,95 @@ export async function getEtudiantsDisponibles(req, res) {
 
   if (error) return sendError(res, 500, error.message);
 
-  const disponibles = (tousEtudiants ?? []).filter(u => !occupesIds.includes(u.id));
+  return res.json({ etudiants: tousEtudiants ?? [], total: (tousEtudiants ?? []).length });
+}
 
-  return res.json({ etudiants: disponibles, total: disponibles.length });
+// ─── GROUPES ─────────────────────────────────────────────────────────────────
+
+// GET /api/projects/:id/groupes — liste les groupes d'un projet avec leurs membres
+export async function listGroupes(req, res) {
+  const { id } = req.params;
+
+  const { data: groupes, error } = await supabaseAdmin
+    .from('groupes')
+    .select('*')
+    .eq('project_id', id)
+    .order('created_at');
+
+  if (error) return sendError(res, 500, error.message);
+
+  if (!groupes.length) return res.json({ groupes: [] });
+
+  const groupeIds = groupes.map(g => g.id);
+  const { data: members } = await supabaseAdmin
+    .from('project_members')
+    .select('*')
+    .in('groupe_id', groupeIds);
+
+  // Récupère les noms depuis auth.users
+  const { data: { users } } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
+  const userMap = new Map(users.map(u => [u.id, {
+    nom:   u.user_metadata?.nom ?? u.email,
+    email: u.email,
+    role:  u.user_metadata?.role ?? 'etudiant',
+  }]));
+
+  const groupesAvecMembres = groupes.map(g => ({
+    ...g,
+    membres: (members ?? [])
+      .filter(m => m.groupe_id === g.id)
+      .map(m => ({ ...m, ...userMap.get(m.user_id) })),
+  }));
+
+  return res.json({ groupes: groupesAvecMembres });
+}
+
+// POST /api/projects/:id/groupes — crée un groupe et assigne des membres
+export async function createGroupe(req, res) {
+  const { id } = req.params;
+  const { nom, membres } = req.body;
+
+  if (!nom) return sendError(res, 400, 'Le nom du groupe est obligatoire');
+
+  const { data: groupe, error } = await supabaseAdmin
+    .from('groupes')
+    .insert({ project_id: id, nom })
+    .select()
+    .single();
+
+  if (error) return sendError(res, 400, error.message);
+
+  // Assigner les membres au groupe
+  if (Array.isArray(membres) && membres.length > 0) {
+    for (const m of membres) {
+      const { data: existing } = await supabaseAdmin
+        .from('project_members')
+        .select('id')
+        .eq('project_id', id)
+        .eq('user_id', m.user_id)
+        .single();
+
+      if (existing) {
+        await supabaseAdmin
+          .from('project_members')
+          .update({ groupe_id: groupe.id, role: m.role ?? 'etudiant' })
+          .eq('id', existing.id);
+      } else {
+        await supabaseAdmin
+          .from('project_members')
+          .insert({ project_id: id, user_id: m.user_id, role: m.role ?? 'etudiant', groupe_id: groupe.id });
+      }
+    }
+  }
+
+  return res.status(201).json({ groupe });
+}
+
+// DELETE /api/projects/:id/groupes/:groupeId — supprime un groupe
+export async function deleteGroupe(req, res) {
+  const { groupeId } = req.params;
+  await supabaseAdmin.from('groupes').delete().eq('id', groupeId);
+  return res.status(204).send();
 }
 
 // ─── TRACKING ÉLÉMENTS NON CONSULTÉS ─────────────────────────────────────────

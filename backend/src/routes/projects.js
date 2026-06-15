@@ -56,6 +56,17 @@ router.patch('/:id/jalons/:jalonId', requireRole(ROLES.ENCADRANT), projectsContr
 // DELETE /api/projects/:id/jalons/:jalonId      — supprime un jalon (ENCADRANT)
 router.delete('/:id/jalons/:jalonId', requireRole(ROLES.ENCADRANT), projectsController.deleteJalon);
 
+// ─── GROUPES ─────────────────────────────────────────────────────────────────
+
+// GET    /api/projects/:id/groupes              — liste les groupes avec membres
+router.get('/:id/groupes', projectsController.listGroupes);
+
+// POST   /api/projects/:id/groupes              — crée un groupe (ENCADRANT)
+router.post('/:id/groupes', requireRole(ROLES.ENCADRANT), projectsController.createGroupe);
+
+// DELETE /api/projects/:id/groupes/:groupeId    — supprime un groupe (ENCADRANT)
+router.delete('/:id/groupes/:groupeId', requireRole(ROLES.ENCADRANT), projectsController.deleteGroupe);
+
 // ─── TRACKING ────────────────────────────────────────────────────────────────
 
 // GET    /api/projects/:id/unseen               — éléments non consultés depuis la dernière visite (ENCADRANT)

@@ -1,49 +1,148 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import './EncadrantDashboard.css';
 
 const STATUT_LABEL = {
-  propose:   'Proposé',
-  valide:    'Validé',
-  en_cours:  'En cours',
-  en_retard: 'En retard',
-  livre:     'Livré',
-  soutenu:   'Soutenu',
-  cloture:   'Clôturé',
+  propose: 'Proposé', valide: 'Validé', en_cours: 'En cours',
+  en_retard: 'En retard', livre: 'Livré', soutenu: 'Soutenu', cloture: 'Clôturé',
 };
-
 const STATUT_COLOR = {
-  propose:   'grey',
-  valide:    'blue',
-  en_cours:  'blue',
-  en_retard: 'red',
-  livre:     'green',
-  soutenu:   'green',
-  cloture:   'grey',
+  propose: 'grey', valide: 'blue', en_cours: 'blue',
+  en_retard: 'red', livre: 'green', soutenu: 'green', cloture: 'grey',
 };
+const HEALTH_COLOR = { bon: 'green', moyen: 'amber', critique: 'red' };
+const HEALTH_LABEL = { bon: 'Bon', moyen: 'Moyen', critique: 'Critique' };
 
-const HEALTH_COLOR = {
-  bon:      'green',
-  moyen:    'amber',
-  critique: 'red',
-};
+// ── Composant GroupeCard ──────────────────────────────────────────────────────
+function GroupeCard({ groupe, projetId }) {
+  const navigate = useNavigate();
+  return (
+    <div
+      className="enc-groupe-card"
+      onClick={() => navigate(`/encadrant/projets/${projetId}`)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={e => e.key === 'Enter' && navigate(`/encadrant/projets/${projetId}`)}
+    >
+      <div className="enc-groupe-card__header">
+        <div className="enc-groupe-card__avatar">
+          {groupe.nom.charAt(0).toUpperCase()}
+        </div>
+        <div className="enc-groupe-card__title-block">
+          <span className="enc-groupe-card__nom">{groupe.nom}</span>
+          <span className="enc-groupe-card__count">
+            {groupe.membres?.length ?? 0} étudiant{(groupe.membres?.length ?? 0) > 1 ? 's' : ''}
+          </span>
+        </div>
+        <span className="enc-groupe-card__cta">Voir →</span>
+      </div>
+      {groupe.membres?.length > 0 && (
+        <div className="enc-groupe-card__membres">
+          {groupe.membres.map(m => (
+            <div key={m.user_id} className="enc-groupe-card__membre">
+              <div className="enc-groupe-card__membre-avatar">
+                {(m.nom ?? '?').charAt(0).toUpperCase()}
+              </div>
+              <div className="enc-groupe-card__membre-info">
+                <span className="enc-groupe-card__membre-nom">{m.nom ?? 'Inconnu'}</span>
+                <span className="enc-groupe-card__membre-email">{m.email ?? ''}</span>
+              </div>
+              {m.role === 'team_leader' && (
+                <span className="enc-groupe-card__leader-badge">Chef</span>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
-const HEALTH_LABEL = {
-  bon:      'Bon',
-  moyen:    'Moyen',
-  critique: 'Critique',
-};
+// ── Composant ProjetSection ───────────────────────────────────────────────────
+function ProjetSection({ projet }) {
+  const [groupes, setGroupes]   = useState([]);
+  const [open, setOpen]         = useState(false);
+  const [loading, setLoading]   = useState(false);
+  const [loaded, setLoaded]     = useState(false);
 
+  async function toggle() {
+    if (!open && !loaded) {
+      setLoading(true);
+      try {
+        const { data } = await api.get(`/projects/${projet.id}/groupes`);
+        setGroupes(data.groupes ?? []);
+        setLoaded(true);
+      } catch { /* ignore */ }
+      finally { setLoading(false); }
+    }
+    setOpen(o => !o);
+  }
+
+  const avancement = projet.stats?.total_taches > 0
+    ? Math.round((projet.stats.taches_terminees / projet.stats.total_taches) * 100)
+    : 0;
+
+  return (
+    <div className={`enc-projet-section${open ? ' enc-projet-section--open' : ''}`}>
+      {/* En-tête projet */}
+      <button className="enc-projet-section__header" onClick={toggle}>
+        <div className="enc-projet-section__left">
+          <svg className={`enc-projet-section__chevron${open ? ' enc-projet-section__chevron--open' : ''}`}
+            viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
+            <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+          </svg>
+          <div>
+            <span className="enc-projet-section__nom">{projet.nom}</span>
+            <span className="enc-projet-section__meta">
+              {avancement}% · {projet.stats?.total_taches ?? 0} tâches
+            </span>
+          </div>
+        </div>
+        <div className="enc-projet-section__right">
+          <span className={`dash-badge dash-badge--${STATUT_COLOR[projet.statut] ?? 'grey'}`}>
+            {STATUT_LABEL[projet.statut] ?? projet.statut}
+          </span>
+          <span className={`enc-health-badge enc-health-badge--${HEALTH_COLOR[projet.health_categorie]}`}>
+            {HEALTH_LABEL[projet.health_categorie]} · {projet.health_score}/100
+          </span>
+        </div>
+      </button>
+
+      {/* Corps — groupes */}
+      {open && (
+        <div className="enc-projet-section__body">
+          {loading ? (
+            <div className="enc-projet-section__loading">Chargement des groupes…</div>
+          ) : groupes.length === 0 ? (
+            <div className="enc-projet-section__empty">
+              <p>Aucun groupe créé pour ce projet.</p>
+              <Link to="/encadrant/projets" className="btn btn--ghost btn--sm">
+                Gérer le projet →
+              </Link>
+            </div>
+          ) : (
+            <div className="enc-groupes-grid">
+              {groupes.map(g => (
+                <GroupeCard key={g.id} groupe={g} projetId={projet.id} />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Dashboard principal ───────────────────────────────────────────────────────
 export default function EncadrantDashboard() {
   const { user } = useAuth();
 
-  const [kpis, setKpis]                     = useState(null);
-  const [projets, setProjets]               = useState([]);
-  const [distribution, setDistribution]     = useState({ bon: 0, moyen: 0, critique: 0 });
-  const [loading, setLoading]               = useState(true);
-  const [error, setError]                   = useState('');
+  const [kpis, setKpis]       = useState(null);
+  const [projets, setProjets] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError]     = useState('');
 
   useEffect(() => {
     async function load() {
@@ -51,7 +150,6 @@ export default function EncadrantDashboard() {
         const { data } = await api.get('/dashboard');
         setKpis(data.kpis);
         setProjets(data.projets ?? []);
-        setDistribution(data.distribution_sante ?? { bon: 0, moyen: 0, critique: 0 });
       } catch {
         setError('Impossible de charger le tableau de bord.');
       } finally {
@@ -69,10 +167,10 @@ export default function EncadrantDashboard() {
           <h1 className="dash-welcome__title">Bonjour, {user?.nom}</h1>
           <p className="dash-welcome__sub">
             <span className="dash-role-badge dash-role-badge--encadrant">Encadrant</span>
-            Vue d'ensemble de vos projets supervisés.
+            Vue d'ensemble de vos projets et groupes.
           </p>
         </div>
-        <Link to="/encadrant/projets" className="dash-welcome__cta">Mes projets</Link>
+        <Link to="/encadrant/projets" className="dash-welcome__cta">+ Nouveau projet</Link>
       </div>
 
       {error && <p className="dash-error">{error}</p>}
@@ -81,11 +179,11 @@ export default function EncadrantDashboard() {
         <div className="dash-loading">Chargement…</div>
       ) : (
         <>
-          {/* KPI cards */}
+          {/* KPIs */}
           <div className="dash-kpis">
             <div className="dash-kpi">
               <span className="dash-kpi__value">{kpis?.total_projets ?? 0}</span>
-              <span className="dash-kpi__label">Projet{kpis?.total_projets > 1 ? 's' : ''} supervisé{kpis?.total_projets > 1 ? 's' : ''}</span>
+              <span className="dash-kpi__label">Projet{kpis?.total_projets > 1 ? 's' : ''}</span>
               <Link to="/encadrant/projets" className="dash-kpi__link">Voir tout</Link>
             </div>
             <div className="dash-kpi dash-kpi--blue">
@@ -94,13 +192,13 @@ export default function EncadrantDashboard() {
             </div>
             <div className="dash-kpi dash-kpi--amber">
               <span className="dash-kpi__value">{kpis?.livrables_en_attente ?? 0}</span>
-              <span className="dash-kpi__label">Livrable{kpis?.livrables_en_attente > 1 ? 's' : ''} à valider</span>
-              <Link to="/encadrant/livrables" className="dash-kpi__link">Voir tout</Link>
+              <span className="dash-kpi__label">Livrables à valider</span>
+              <Link to="/encadrant/livrables" className="dash-kpi__link">Voir</Link>
             </div>
             {(kpis?.taches_en_retard ?? 0) > 0 && (
               <div className="dash-kpi dash-kpi--red">
                 <span className="dash-kpi__value">{kpis.taches_en_retard}</span>
-                <span className="dash-kpi__label">Tâche{kpis.taches_en_retard > 1 ? 's' : ''} en retard</span>
+                <span className="dash-kpi__label">Tâches en retard</span>
               </div>
             )}
             <div className={`dash-kpi dash-kpi--${kpis?.health_score_moyen >= 75 ? 'green' : kpis?.health_score_moyen >= 50 ? 'amber' : 'red'}`}>
@@ -109,79 +207,24 @@ export default function EncadrantDashboard() {
             </div>
           </div>
 
-          {/* Liste projets */}
+          {/* Projets & Groupes */}
           <section className="dash-section">
             <div className="dash-section__hd">
-              <h2 className="dash-section__title">Projets supervisés</h2>
-              <Link to="/encadrant/projets" className="dash-section__more">Tout voir</Link>
+              <h2 className="dash-section__title">Mes projets & groupes</h2>
+              <span className="dash-section__hint">Cliquez sur un projet pour voir ses groupes</span>
             </div>
 
             {projets.length === 0 ? (
               <div className="dash-empty">
                 <p>Aucun projet supervisé pour le moment.</p>
-                <Link to="/encadrant/projets" className="dash-empty__link">Créer un projet</Link>
+                <Link to="/encadrant/projets" className="btn btn--primary" style={{ marginTop: '0.75rem' }}>
+                  Créer un projet
+                </Link>
               </div>
             ) : (
-              <div className="dash-project-list">
+              <div className="enc-projets-list">
                 {projets.map(p => (
-                  <div key={p.id} className="dash-project-card">
-                    <div className="dash-project-card__hd">
-                      <h3 className="dash-project-card__name">{p.nom}</h3>
-                      <div className="enc-card-badges">
-                        <span className={`dash-badge dash-badge--${STATUT_COLOR[p.statut] ?? 'grey'}`}>
-                          {STATUT_LABEL[p.statut] ?? p.statut}
-                        </span>
-                        <span className={`enc-health-badge enc-health-badge--${HEALTH_COLOR[p.health_categorie]}`}>
-                          {HEALTH_LABEL[p.health_categorie]} · {p.health_score}/100
-                        </span>
-                      </div>
-                    </div>
-
-                    {p.description && (
-                      <p className="dash-project-card__desc">{p.description}</p>
-                    )}
-
-                    {/* Barre avancement */}
-                    <div className="dash-progress">
-                      <div className="dash-progress__bar">
-                        <div
-                          className="dash-progress__fill"
-                          style={{ width: `${p.stats?.total_taches > 0 ? Math.round((p.stats.taches_terminees / p.stats.total_taches) * 100) : 0}%` }}
-                        />
-                      </div>
-                      <span className="dash-progress__label">
-                        {p.stats?.taches_terminees ?? 0}/{p.stats?.total_taches ?? 0} tâches
-                      </span>
-                    </div>
-
-                    {/* Stats mini */}
-                    <div className="enc-card-stats">
-                      {p.stats?.livrables_en_attente > 0 && (
-                        <span className="enc-card-stat enc-card-stat--amber">
-                          {p.stats.livrables_en_attente} livrable{p.stats.livrables_en_attente > 1 ? 's' : ''} à valider
-                        </span>
-                      )}
-                      {p.stats?.taches_en_retard > 0 && (
-                        <span className="enc-card-stat enc-card-stat--red">
-                          {p.stats.taches_en_retard} en retard
-                        </span>
-                      )}
-                      <span className="enc-card-stat">
-                        {p.stats?.total_membres ?? 0} membre{p.stats?.total_membres > 1 ? 's' : ''}
-                      </span>
-                    </div>
-
-                    <div className="dash-project-card__ft">
-                      {p.date_fin && (
-                        <span className="dash-project-card__date">
-                          Échéance : {new Date(p.date_fin).toLocaleDateString('fr-FR')}
-                        </span>
-                      )}
-                      <Link to={`/encadrant/projets/${p.id}`} className="dash-project-card__link">
-                        Voir le détail →
-                      </Link>
-                    </div>
-                  </div>
+                  <ProjetSection key={p.id} projet={p} />
                 ))}
               </div>
             )}
@@ -206,7 +249,7 @@ export default function EncadrantDashboard() {
                 </svg>
                 <span>Mes projets</span>
               </Link>
-              <Link to="/evaluation" className="dash-ql dash-ql--blue">
+              <Link to="/encadrant/evaluation" className="dash-ql dash-ql--blue">
                 <svg viewBox="0 0 20 20" fill="currentColor" width="20" height="20">
                   <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                 </svg>

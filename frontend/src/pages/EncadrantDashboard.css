@@ -127,3 +127,240 @@
 /* KPI amber/red variants (manquants dans Dashboard.css) */
 .dash-kpi--amber::before { background: #d97706; }
 .dash-kpi--red::before   { background: #dc2626; }
+
+/* ── Section hint ── */
+.dash-section__hint {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  font-style: italic;
+}
+
+/* ── Liste projets ── */
+.enc-projets-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* ── Section projet (accordéon) ── */
+.enc-projet-section {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+  transition: box-shadow 0.2s;
+}
+
+.enc-projet-section--open {
+  box-shadow: 0 4px 16px rgba(37,99,235,0.08);
+  border-color: #bfdbfe;
+}
+
+.enc-projet-section__header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  gap: 1rem;
+}
+
+.enc-projet-section__header:hover { background: #f8fafc; }
+
+.enc-projet-section__left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.enc-projet-section__chevron {
+  color: #94a3b8;
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+
+.enc-projet-section__chevron--open {
+  transform: rotate(90deg);
+  color: #2563eb;
+}
+
+.enc-projet-section__nom {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1e293b;
+  display: block;
+}
+
+.enc-projet-section__meta {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.enc-projet-section__right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.enc-projet-section__body {
+  border-top: 1px solid #f1f5f9;
+  padding: 1rem 1.25rem;
+  background: #f8fafc;
+}
+
+.enc-projet-section__loading {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  padding: 0.5rem 0;
+}
+
+.enc-projet-section__empty {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* ── Grille groupes ── */
+.enc-groupes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 0.75rem;
+}
+
+/* ── Carte groupe ── */
+.enc-groupe-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 0.9rem;
+  cursor: pointer;
+  transition: box-shadow 0.15s, border-color 0.15s, transform 0.1s;
+}
+
+.enc-groupe-card:hover {
+  box-shadow: 0 4px 14px rgba(37,99,235,0.12);
+  border-color: #2563eb;
+  transform: translateY(-1px);
+}
+
+.enc-groupe-card__header {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-bottom: 0.75rem;
+}
+
+.enc-groupe-card__avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.enc-groupe-card__title-block {
+  flex: 1;
+  min-width: 0;
+}
+
+.enc-groupe-card__nom {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #1e293b;
+  display: block;
+}
+
+.enc-groupe-card__count {
+  font-size: 0.72rem;
+  color: #94a3b8;
+}
+
+.enc-groupe-card__cta {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #2563eb;
+  flex-shrink: 0;
+}
+
+/* Membres dans la carte groupe */
+.enc-groupe-card__membres {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #f1f5f9;
+}
+
+.enc-groupe-card__membre {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.enc-groupe-card__membre-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #e2e8f0;
+  color: #475569;
+  font-size: 0.72rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.enc-groupe-card__membre-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.enc-groupe-card__membre-nom {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #1e293b;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.enc-groupe-card__membre-email {
+  font-size: 0.7rem;
+  color: #94a3b8;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.enc-groupe-card__leader-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #2563eb;
+  background: rgba(37,99,235,0.1);
+  padding: 1px 6px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.btn--sm {
+  padding: 0.3rem 0.7rem;
+  font-size: 0.8rem;
+}

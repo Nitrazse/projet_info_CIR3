@@ -149,27 +149,31 @@ function KanbanReadOnly({ taches }) {
 // ── Page principale ──────────────────────────────────────────────────────────
 export default function EncadrantProjet() {
   const { id } = useParams();
-  const [project, setProject]     = useState(null);
-  const [jalons, setJalons]       = useState([]);
-  const [loading, setLoading]     = useState(true);
-  const [error, setError]         = useState('');
-  const [activeTab, setActiveTab] = useState(0);
-  const [refresh, setRefresh]     = useState(0);
-  const [taskModal, setTaskModal] = useState(false);
-  const [taskForm, setTaskForm]   = useState({ titre: '', description: '', date_echeance: '' });
-  const [taskErr, setTaskErr]     = useState('');
-  const [taskSaving, setTaskSaving] = useState(false);
+  const [project, setProject]         = useState(null);
+  const [jalons, setJalons]           = useState([]);
+  const [groupes, setGroupes]         = useState([]);
+  const [selectedGroupe, setSelectedGroupe] = useState(null); // groupe cliqué
+  const [loading, setLoading]         = useState(true);
+  const [error, setError]             = useState('');
+  const [activeTab, setActiveTab]     = useState(0);
+  const [refresh, setRefresh]         = useState(0);
+  const [taskModal, setTaskModal]     = useState(false);
+  const [taskForm, setTaskForm]       = useState({ titre: '', description: '', date_echeance: '' });
+  const [taskErr, setTaskErr]         = useState('');
+  const [taskSaving, setTaskSaving]   = useState(false);
 
   useEffect(() => {
     async function load() {
       setLoading(true);
       try {
-        const [pRes, jRes] = await Promise.all([
+        const [pRes, jRes, gRes] = await Promise.all([
           api.get(`/projects/${id}`),
           api.get(`/projects/${id}/jalons`),
+          api.get(`/projects/${id}/groupes`),
         ]);
         setProject(pRes.data.project);
         setJalons(jRes.data.jalons ?? []);
+        setGroupes(gRes.data.groupes ?? []);
       } catch {
         setError('Impossible de charger le projet.');
       } finally {
@@ -282,6 +286,82 @@ export default function EncadrantProjet() {
         </div>
       </div>
 
+      {/* ── Groupes ── */}
+      <section className="dash-section">
+        <div className="dash-section__hd">
+          <h2 className="dash-section__title">Groupes d'étudiants</h2>
+          <span style={{fontSize:'0.8rem',color:'#94a3b8'}}>Cliquez sur un groupe pour voir ses membres</span>
+        </div>
+        {groupes.length === 0 ? (
+          <p style={{fontSize:'0.85rem',color:'#94a3b8'}}>Aucun groupe créé pour ce projet.</p>
+        ) : (
+          <div className="enc-groupes-grid" style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(220px,1fr))',gap:'0.75rem'}}>
+            {groupes.map(g => (
+              <div
+                key={g.id}
+                onClick={() => setSelectedGroupe(selectedGroupe?.id === g.id ? null : g)}
+                style={{
+                  background: selectedGroupe?.id === g.id ? '#eff6ff' : '#fff',
+                  border: `1px solid ${selectedGroupe?.id === g.id ? '#2563eb' : '#e2e8f0'}`,
+                  borderRadius: '10px', padding: '0.9rem', cursor: 'pointer',
+                  transition: 'all 0.15s'
+                }}
+              >
+                <div style={{display:'flex',alignItems:'center',gap:'0.6rem',marginBottom:'0.6rem'}}>
+                  <div style={{
+                    width:34,height:34,borderRadius:9,background:'#2563eb',color:'#fff',
+                    display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,flexShrink:0
+                  }}>
+                    {g.nom.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <div style={{fontWeight:700,fontSize:'0.9rem',color:'#1e293b'}}>{g.nom}</div>
+                    <div style={{fontSize:'0.72rem',color:'#94a3b8'}}>{g.membres?.length ?? 0} étudiant{(g.membres?.length ?? 0) > 1 ? 's' : ''}</div>
+                  </div>
+                </div>
+                {/* Membres visibles */}
+                {g.membres?.map(m => (
+                  <div key={m.user_id} style={{display:'flex',alignItems:'center',gap:'0.5rem',marginTop:'0.4rem'}}>
+                    <div style={{
+                      width:26,height:26,borderRadius:'50%',background:'#e2e8f0',color:'#475569',
+                      fontSize:'0.72rem',fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0
+                    }}>
+                      {(m.nom ?? '?').charAt(0).toUpperCase()}
+                    </div>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{fontSize:'0.82rem',fontWeight:600,color:'#1e293b',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{m.nom ?? 'Inconnu'}</div>
+                      <div style={{fontSize:'0.7rem',color:'#94a3b8',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{m.email}</div>
+                    </div>
+                    {m.role === 'team_leader' && (
+                      <span style={{fontSize:'0.65rem',fontWeight:700,color:'#2563eb',background:'rgba(37,99,235,0.1)',padding:'1px 6px',borderRadius:999}}>Chef</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* ── Infos groupe sélectionné ── */}
+      {!selectedGroupe ? (
+        <div style={{background:'#f8fafc',border:'1px dashed #e2e8f0',borderRadius:12,padding:'2rem',textAlign:'center',color:'#94a3b8',fontSize:'0.9rem'}}>
+          👆 Cliquez sur un groupe pour voir ses informations détaillées
+        </div>
+      ) : (
+        <>
+          {/* Header groupe */}
+          <div style={{display:'flex',alignItems:'center',gap:'0.75rem',padding:'0.75rem 1rem',background:'#eff6ff',borderRadius:10,border:'1px solid #bfdbfe'}}>
+            <div style={{width:36,height:36,borderRadius:9,background:'#2563eb',color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,fontSize:'1rem'}}>
+              {selectedGroupe.nom.charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <div style={{fontWeight:700,color:'#1e293b'}}>{selectedGroupe.nom}</div>
+              <div style={{fontSize:'0.75rem',color:'#64748b'}}>{selectedGroupe.membres?.length ?? 0} étudiant{(selectedGroupe.membres?.length ?? 0) > 1 ? 's' : ''}</div>
+            </div>
+            <button onClick={() => setSelectedGroupe(null)} style={{marginLeft:'auto',background:'none',border:'none',cursor:'pointer',color:'#94a3b8',fontSize:'1.2rem'}}>✕</button>
+          </div>
+
       {/* ── Stats rapides ── */}
       <div className="ep-stats">
         <div className="ep-stat">
@@ -332,12 +412,14 @@ export default function EncadrantProjet() {
 
             {/* Équipe */}
             <section className="dash-section">
-              <h2 className="dash-section__title">Équipe</h2>
-              {project.membres?.length === 0 ? (
+              <h2 className="dash-section__title">
+                {selectedGroupe ? `Membres — ${selectedGroupe.nom}` : 'Équipe'}
+              </h2>
+              {(selectedGroupe ? selectedGroupe.membres : project.membres)?.length === 0 ? (
                 <p className="ep-empty-sm">Aucun membre.</p>
               ) : (
                 <div className="ep-team">
-                  {project.membres?.map(m => (
+                  {(selectedGroupe ? selectedGroupe.membres : project.membres)?.map(m => (
                     <div key={m.user_id} className="ep-team__member">
                       <div className="ep-team__avatar">
                         {m.user_id?.slice(0, 1).toUpperCase()}
@@ -366,7 +448,13 @@ export default function EncadrantProjet() {
                 </button>
               )}
             </div>
-            <KanbanReadOnly taches={project.taches ?? []} />
+            <KanbanReadOnly taches={
+              selectedGroupe
+                ? (project.taches ?? []).filter(t =>
+                    selectedGroupe.membres?.some(m => m.user_id === t.assignee_id)
+                  )
+                : (project.taches ?? [])
+            } />
           </section>
         )}
 
@@ -509,6 +597,8 @@ export default function EncadrantProjet() {
             </form>
           </div>
         </div>
+      )}
+        </>
       )}
     </div>
   );

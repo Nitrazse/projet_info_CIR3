@@ -100,11 +100,12 @@ function Step2({ jalons, onChange }) {
   );
 }
 
-// ── Étape 3 : Équipe ─────────────────────────────────────────────────────────
-function Step3({ membres, onChange }) {
+// ── Étape 3 : Groupes ────────────────────────────────────────────────────────
+function Step3({ groupes, onChange }) {
   const [etudiants, setEtudiants] = useState([]);
   const [search, setSearch]       = useState('');
   const [loading, setLoading]     = useState(true);
+  const [activeGroupe, setActiveGroupe] = useState(0); // index du groupe actif
 
   useEffect(() => {
     api.get('/projects/etudiants/disponibles')
@@ -113,76 +114,151 @@ function Step3({ membres, onChange }) {
       .finally(() => setLoading(false));
   }, []);
 
+  // Tous les membres déjà assignés à n'importe quel groupe
+  const tousAssignes = groupes.flatMap(g => g.membres.map(m => m.user_id));
+
   const filtered = etudiants.filter(e =>
-    !membres.find(m => m.user_id === e.id) &&
+    !tousAssignes.includes(e.id) &&
     (e.nom?.toLowerCase().includes(search.toLowerCase()) ||
      e.email?.toLowerCase().includes(search.toLowerCase()))
   );
 
-  function add(etudiant) {
-    onChange([...membres, { user_id: etudiant.id, nom: etudiant.nom, email: etudiant.email, role: 'etudiant' }]);
+  function addGroupe() {
+    const nouveau = { nom: `Groupe ${groupes.length + 1}`, membres: [] };
+    onChange([...groupes, nouveau]);
+    setActiveGroupe(groupes.length);
   }
-  function remove(userId) {
-    onChange(membres.filter(m => m.user_id !== userId));
+
+  function removeGroupe(i) {
+    const updated = groupes.filter((_, idx) => idx !== i);
+    onChange(updated);
+    setActiveGroupe(Math.max(0, activeGroupe - 1));
   }
-  function setRole(userId, role) {
-    onChange(membres.map(m => m.user_id === userId ? { ...m, role } : m));
+
+  function renameGroupe(i, nom) {
+    onChange(groupes.map((g, idx) => idx === i ? { ...g, nom } : g));
+  }
+
+  function addToGroupe(etudiant) {
+    onChange(groupes.map((g, idx) =>
+      idx === activeGroupe
+        ? { ...g, membres: [...g.membres, { user_id: etudiant.id, nom: etudiant.nom, email: etudiant.email, role: 'etudiant' }] }
+        : g
+    ));
+    setSearch('');
+  }
+
+  function removeFromGroupe(groupeIdx, userId) {
+    onChange(groupes.map((g, idx) =>
+      idx === groupeIdx ? { ...g, membres: g.membres.filter(m => m.user_id !== userId) } : g
+    ));
+  }
+
+  function setRole(groupeIdx, userId, role) {
+    onChange(groupes.map((g, idx) =>
+      idx === groupeIdx
+        ? { ...g, membres: g.membres.map(m => m.user_id === userId ? { ...m, role } : m) }
+        : g
+    ));
   }
 
   return (
     <div className="ep2-step">
-      <h3 className="ep2-step__title">Équipe du projet</h3>
-
-      {/* Membres sélectionnés */}
-      {membres.length > 0 && (
-        <div className="ep2-membres">
-          {membres.map(m => (
-            <div key={m.user_id} className="ep2-membre">
-              <div className="ep2-membre__avatar">{m.nom?.[0]?.toUpperCase() ?? '?'}</div>
-              <div className="ep2-membre__info">
-                <span className="ep2-membre__nom">{m.nom ?? m.email}</span>
-                <span className="ep2-membre__email">{m.email}</span>
-              </div>
-              <select
-                className="ep2-membre__role"
-                value={m.role}
-                onChange={e => setRole(m.user_id, e.target.value)}
-              >
-                <option value="etudiant">Étudiant</option>
-                <option value="team_leader">Chef d'équipe</option>
-              </select>
-              <button type="button" className="ep2-membre__remove" onClick={() => remove(m.user_id)}>✕</button>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Recherche étudiants disponibles */}
-      <div className="ep2-search">
-        <input
-          className="fld__input"
-          placeholder="🔍 Rechercher un étudiant disponible…"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-        />
+      <div className="ep2-step__hd">
+        <h3 className="ep2-step__title">Groupes d'étudiants</h3>
+        <button type="button" className="ep2-add-btn" onClick={addGroupe}>+ Nouveau groupe</button>
       </div>
 
-      {loading ? (
-        <div className="page-loading">Chargement…</div>
-      ) : filtered.length === 0 ? (
-        <p className="ep2-no-result">{search ? 'Aucun résultat.' : 'Aucun étudiant disponible.'}</p>
+      {groupes.length === 0 ? (
+        <div className="ep2-empty-hint">
+          <p>Aucun groupe créé. Cliquez sur "Nouveau groupe" pour commencer.</p>
+          <button type="button" className="btn btn--ghost" onClick={addGroupe}>Créer le premier groupe</button>
+        </div>
       ) : (
-        <div className="ep2-etudiant-list">
-          {filtered.map(e => (
-            <div key={e.id} className="ep2-etudiant" onClick={() => add(e)}>
-              <div className="ep2-etudiant__avatar">{e.nom?.[0]?.toUpperCase() ?? '?'}</div>
-              <div className="ep2-etudiant__info">
-                <span className="ep2-etudiant__nom">{e.nom}</span>
-                <span className="ep2-etudiant__email">{e.email}</span>
+        <div className="ep2-groupes-layout">
+          {/* Liste des groupes */}
+          <div className="ep2-groupes-list">
+            {groupes.map((g, i) => (
+              <div
+                key={i}
+                className={`ep2-groupe-tab${activeGroupe === i ? ' ep2-groupe-tab--active' : ''}`}
+                onClick={() => setActiveGroupe(i)}
+              >
+                <div className="ep2-groupe-tab__avatar">{g.nom.charAt(0)}</div>
+                <div className="ep2-groupe-tab__info">
+                  <span className="ep2-groupe-tab__nom">{g.nom}</span>
+                  <span className="ep2-groupe-tab__count">{g.membres.length} étudiant{g.membres.length > 1 ? 's' : ''}</span>
+                </div>
+                <button type="button" className="ep2-jalon__remove" onClick={e => { e.stopPropagation(); removeGroupe(i); }}>✕</button>
               </div>
-              <span className="ep2-etudiant__add">+ Ajouter</span>
+            ))}
+          </div>
+
+          {/* Détail du groupe actif */}
+          <div className="ep2-groupe-detail">
+            {/* Nom du groupe */}
+            <div className="fld" style={{ marginBottom: '0.75rem' }}>
+              <input
+                className="fld__input"
+                value={groupes[activeGroupe]?.nom ?? ''}
+                onChange={e => renameGroupe(activeGroupe, e.target.value)}
+                placeholder="Nom du groupe"
+              />
             </div>
-          ))}
+
+            {/* Membres du groupe */}
+            {groupes[activeGroupe]?.membres.length > 0 && (
+              <div className="ep2-membres" style={{ marginBottom: '0.75rem' }}>
+                {groupes[activeGroupe].membres.map(m => (
+                  <div key={m.user_id} className="ep2-membre">
+                    <div className="ep2-membre__avatar">{m.nom?.[0]?.toUpperCase() ?? '?'}</div>
+                    <div className="ep2-membre__info">
+                      <span className="ep2-membre__nom">{m.nom ?? m.email}</span>
+                      <span className="ep2-membre__email">{m.email}</span>
+                    </div>
+                    <select
+                      className="ep2-membre__role"
+                      value={m.role}
+                      onChange={e => setRole(activeGroupe, m.user_id, e.target.value)}
+                    >
+                      <option value="etudiant">Étudiant</option>
+                      <option value="team_leader">Chef d'équipe</option>
+                    </select>
+                    <button type="button" className="ep2-membre__remove" onClick={() => removeFromGroupe(activeGroupe, m.user_id)}>✕</button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Recherche étudiants */}
+            <div className="ep2-search">
+              <input
+                className="fld__input"
+                placeholder="🔍 Rechercher un étudiant à ajouter…"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+              />
+            </div>
+
+            {loading ? (
+              <div className="page-loading">Chargement…</div>
+            ) : filtered.length === 0 ? (
+              <p className="ep2-no-result">{search ? 'Aucun résultat.' : 'Aucun étudiant disponible.'}</p>
+            ) : (
+              <div className="ep2-etudiant-list">
+                {filtered.map(e => (
+                  <div key={e.id} className="ep2-etudiant" onClick={() => addToGroupe(e)}>
+                    <div className="ep2-etudiant__avatar">{e.nom?.[0]?.toUpperCase() ?? '?'}</div>
+                    <div className="ep2-etudiant__info">
+                      <span className="ep2-etudiant__nom">{e.nom}</span>
+                      <span className="ep2-etudiant__email">{e.email}</span>
+                    </div>
+                    <span className="ep2-etudiant__add">+ Ajouter</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -269,7 +345,7 @@ export default function EncadrantProjets() {
   const [step, setStep]         = useState(0);
   const [form, setForm]         = useState({ nom: '', description: '', date_debut: '', date_fin: '' });
   const [jalons, setJalons]     = useState([]);
-  const [membres, setMembres]   = useState([]);
+  const [groupes, setGroupes]   = useState([]);
   const [criteres, setCriteres] = useState([]);
   const [formErr, setFormErr]   = useState({});
   const [saving, setSaving]     = useState(false);
@@ -287,7 +363,7 @@ export default function EncadrantProjets() {
 
   function openForm() {
     setForm({ nom: '', description: '', date_debut: '', date_fin: '' });
-    setJalons([]); setMembres([]); setCriteres([]);
+    setJalons([]); setGroupes([]); setCriteres([]);
     setStep(0); setFormErr({}); setGlobalErr('');
     setShowForm(true);
   }
@@ -296,6 +372,8 @@ export default function EncadrantProjets() {
     const errs = {};
     if (step === 0) {
       if (!form.nom.trim()) errs.nom = 'Le nom est requis.';
+      if (!form.date_debut) errs.date_debut = 'La date de début est requise.';
+      if (!form.date_fin)   errs.date_fin   = 'La date de fin est requise.';
       if (form.date_debut && form.date_fin && form.date_fin < form.date_debut)
         errs.date_fin = 'La date de fin doit être après la date de début.';
     }
@@ -304,6 +382,14 @@ export default function EncadrantProjets() {
         if (!j.titre.trim()) errs[`jalon_${i}`] = 'Titre requis';
         if (!j.date_echeance) errs[`jalond_${i}`] = 'Date requise';
       });
+    }
+    if (step === 2) {
+      if (groupes.length === 0)
+        errs.groupes = 'Vous devez créer au moins un groupe.';
+      else {
+        const vide = groupes.find(g => g.membres.length === 0);
+        if (vide) errs.groupes = `Le groupe "${vide.nom}" n'a aucun étudiant.`;
+      }
     }
     if (step === 3 && criteres.length > 0) {
       const total = criteres.reduce((s, c) => s + (Number(c.poids) || 0), 0);
@@ -335,9 +421,14 @@ export default function EncadrantProjets() {
 
       const projectId = pData.project.id;
 
-      // Ajouter membres
-      for (const m of membres) {
-        await api.post(`/projects/${projectId}/members`, { user_id: m.user_id, role: m.role });
+      // Créer les groupes et assigner les membres
+      for (const g of groupes) {
+        if (g.nom.trim()) {
+          await api.post(`/projects/${projectId}/groupes`, {
+            nom: g.nom.trim(),
+            membres: g.membres,
+          });
+        }
       }
 
       // Créer grille si critères définis
@@ -354,6 +445,16 @@ export default function EncadrantProjets() {
       setGlobalErr(err.response?.data?.error ?? 'Une erreur est survenue.');
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleDelete(id, nom) {
+    if (!window.confirm(`Supprimer le projet "${nom}" ? Cette action est irréversible.`)) return;
+    try {
+      await api.delete(`/projects/${id}`);
+      reload();
+    } catch {
+      alert('Impossible de supprimer ce projet.');
     }
   }
 
@@ -413,6 +514,12 @@ export default function EncadrantProjets() {
                 <Link to={`/encadrant/projets/${p.id}`} className="btn-sm btn-sm--ghost">
                   Voir le détail
                 </Link>
+                <button
+                  className="btn-sm btn-sm--danger"
+                  onClick={() => handleDelete(p.id, p.nom)}
+                >
+                  Supprimer
+                </button>
               </div>
             </div>
           ))}
@@ -454,7 +561,12 @@ export default function EncadrantProjets() {
               {globalErr && <p className="modal__error">{globalErr}</p>}
               {step === 0 && <Step1 form={form} onChange={(f, v) => setForm(p => ({ ...p, [f]: v }))} err={formErr} />}
               {step === 1 && <Step2 jalons={jalons} onChange={setJalons} />}
-              {step === 2 && <Step3 membres={membres} onChange={setMembres} />}
+              {step === 2 && (
+                <>
+                  <Step3 groupes={groupes} onChange={setGroupes} />
+                  {formErr.groupes && <p className="modal__error" style={{marginTop:'0.5rem'}}>{formErr.groupes}</p>}
+                </>
+              )}
               {step === 3 && <Step4 criteres={criteres} onChange={setCriteres} />}
             </div>
 

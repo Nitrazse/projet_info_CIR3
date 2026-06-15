@@ -219,3 +219,80 @@
 .ep2-poids-total--ok    { background: rgba(22,163,74,0.08);  color: #16a34a; }
 .ep2-poids-total--over  { background: rgba(220,38,38,0.08);  color: #dc2626; }
 .ep2-poids-total--under { background: rgba(217,119,6,0.08);  color: #d97706; }
+
+/* ── Groupes Step3 ── */
+.ep2-groupes-layout {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 1rem;
+  min-height: 280px;
+}
+
+.ep2-groupes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  border-right: 1px solid #e2e8f0;
+  padding-right: 1rem;
+}
+
+.ep2-groupe-tab {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.15s;
+}
+
+.ep2-groupe-tab:hover { background: #f8fafc; }
+
+.ep2-groupe-tab--active {
+  background: #eff6ff;
+  border-color: #2563eb;
+}
+
+.ep2-groupe-tab__avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ep2-groupe-tab--active .ep2-groupe-tab__avatar {
+  background: #1d4ed8;
+}
+
+.ep2-groupe-tab__info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.ep2-groupe-tab__nom {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #1e293b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ep2-groupe-tab__count {
+  font-size: 0.72rem;
+  color: #94a3b8;
+}
+
+.ep2-groupe-detail {
+  padding-left: 0.5rem;
+}
