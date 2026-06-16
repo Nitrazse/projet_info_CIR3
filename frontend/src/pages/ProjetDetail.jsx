@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import './EncadrantProjet.css'; // on réutilise les styles
 
@@ -59,26 +60,32 @@ function MiniGantt({ jalons, dateDebut, dateFin }) {
   );
 }
 
-const TABS = ['Vue d\'ensemble', 'Gantt', 'Tâches', 'Livrables', 'Feedbacks encadrant'];
+const BASE_TABS = ['Vue d\'ensemble', 'Gantt', 'Tâches', 'Livrables', 'Feedbacks encadrant'];
 
 export default function ProjetDetail() {
   const { id } = useParams();
+  const { user } = useAuth();
   const [project, setProject] = useState(null);
   const [jalons, setJalons]   = useState([]);
+  const [monGroupe, setMonGroupe] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState('');
   const [activeTab, setActiveTab] = useState(0);
+
+  const TABS = monGroupe ? [...BASE_TABS, 'Mon Groupe'] : BASE_TABS;
 
   useEffect(() => {
     async function load() {
       setLoading(true);
       try {
-        const [pRes, jRes] = await Promise.all([
+        const [pRes, jRes, gRes] = await Promise.all([
           api.get(`/projects/${id}`),
           api.get(`/projects/${id}/jalons`),
+          api.get(`/projects/${id}/my-groupe`),
         ]);
         setProject(pRes.data.project);
         setJalons(jRes.data.jalons ?? []);
+        setMonGroupe(gRes.data.groupe ?? null);
       } catch {
         setError('Impossible de charger le projet.');
       } finally {
@@ -281,6 +288,86 @@ export default function ProjetDetail() {
               </div>
             )}
           </section>
+        )}
+
+        {/* MON GROUPE — tab 5 (visible uniquement si l'étudiant est dans un groupe) */}
+        {activeTab === 5 && monGroupe && (
+          <div className="ep-overview">
+
+            {/* Membres */}
+            <section className="dash-section">
+              <h2 className="dash-section__title">Membres du groupe — {monGroupe.nom}</h2>
+              <div className="ep-tache-list">
+                {monGroupe.membres?.map(m => (
+                  <div key={m.user_id} className="ep-tache-row">
+                    <span className="ep-tache-row__titre">{m.nom ?? m.email}</span>
+                    <span className={`dash-badge dash-badge--${m.role === 'team_leader' ? 'blue' : 'grey'}`}>
+                      {m.role === 'team_leader' ? 'Chef de groupe' : 'Membre'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            {/* Tâches du groupe */}
+            <section className="dash-section">
+              <h2 className="dash-section__title">Tâches de mon groupe</h2>
+              {monGroupe.taches?.length === 0 ? (
+                <p className="ep-empty-sm">Aucune tâche assignée au groupe.</p>
+              ) : (
+                <div className="ep-tache-list">
+                  {monGroupe.taches?.map(t => (
+                    <div key={t.id} className="ep-tache-row">
+                      <span className={`ep-tache-row__statut ep-tache-row__statut--${TASK_STATUT_COLOR[t.statut]}`}>
+                        {TASK_STATUT_LABEL[t.statut]}
+                      </span>
+                      <span className="ep-tache-row__titre">{t.titre}</span>
+                      {t.date_echeance && (
+                        <span className={`ep-tache-row__date${new Date(t.date_echeance) < new Date() && t.statut !== 'termine' ? ' ep-tache-row__date--late' : ''}`}>
+                          {new Date(t.date_echeance).toLocaleDateString('fr-FR')}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            {/* Note du groupe */}
+            <section className="dash-section">
+              <h2 className="dash-section__title">Évaluation</h2>
+              {monGroupe.evaluation ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+                    <div style={{ textAlign: 'center' }}>
+                      <div style={{ fontSize: '2rem', fontWeight: 700, color: '#2563eb' }}>
+                        {monGroupe.evaluation.note}/20
+                      </div>
+                      <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Note du groupe</div>
+                    </div>
+                    {monGroupe.moyenne_classe !== null && (
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: '2rem', fontWeight: 700, color: '#64748b' }}>
+                          {monGroupe.moyenne_classe}/20
+                        </div>
+                        <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                          Moyenne promo ({monGroupe.nb_groupes_evalues} groupe{monGroupe.nb_groupes_evalues > 1 ? 's' : ''})
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  {monGroupe.evaluation.commentaire && (
+                    <p style={{ margin: 0, color: '#374151', fontStyle: 'italic' }}>
+                      "{monGroupe.evaluation.commentaire}"
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <p className="ep-empty-sm">Pas encore d'évaluation pour votre groupe.</p>
+              )}
+            </section>
+
+          </div>
         )}
       </div>
     </div>

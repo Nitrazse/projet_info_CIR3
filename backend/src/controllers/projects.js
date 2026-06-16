@@ -399,7 +399,6 @@ export async function getEtudiantsDisponibles(req, res) {
 // GET /api/projects/:id/groupes — liste les groupes d'un projet avec leurs membres
 export async function listGroupes(req, res) {
   const { id } = req.params;
-
   const { data: groupes, error } = await supabaseAdmin
     .from('groupes')
     .select('*')
@@ -480,6 +479,99 @@ export async function deleteGroupe(req, res) {
   const { groupeId } = req.params;
   await supabaseAdmin.from('groupes').delete().eq('id', groupeId);
   return res.status(204).send();
+}
+
+// ─── MON GROUPE ──────────────────────────────────────────────────────────────
+
+// GET /api/projects/:id/my-groupe — groupe de l'étudiant connecté dans ce projet
+export async function getMyGroupe(req, res) {
+  const { id } = req.params;
+  const userId = req.user.id;
+
+  // Trouver le groupe de l'étudiant dans ce projet
+  const { data: membership } = await supabaseAdmin
+    .from('project_members')
+    .select('groupe_id, role')
+    .eq('project_id', id)
+    .eq('user_id', userId)
+    .single();
+
+  if (!membership?.groupe_id) return res.json({ groupe: null });
+
+  // Détails du groupe
+  const { data: groupe, error } = await supabaseAdmin
+    .from('groupes')
+    .select('*')
+    .eq('id', membership.groupe_id)
+    .single();
+
+  if (error || !groupe) return res.json({ groupe: null });
+
+  // Membres du groupe
+  const { data: members } = await supabaseAdmin
+    .from('project_members')
+    .select('user_id, role')
+    .eq('groupe_id', membership.groupe_id);
+
+  const memberIds = (members ?? []).map(m => m.user_id);
+
+  // Noms des membres
+  const { data: { users } } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
+  const userMap = new Map(users.map(u => [u.id, { nom: u.user_metadata?.nom ?? u.email, email: u.email }]));
+
+  const membresAvecNoms = (members ?? []).map(m => ({
+    ...m,
+    ...userMap.get(m.user_id),
+  }));
+
+  // Tâches du groupe (assignées aux membres)
+  const { data: tasks } = await supabaseAdmin
+    .from('tasks')
+    .select('*')
+    .eq('project_id', id)
+    .in('assignee_id', memberIds.length > 0 ? memberIds : ['00000000-0000-0000-0000-000000000000']);
+
+  // Évaluation de ce groupe (groupe_id correspondant OU pas de groupe_id si éval globale)
+  const { data: evalsGroupe } = await supabaseAdmin
+    .from('evaluations')
+    .select('note, commentaire, statut, notes_criteres, created_at')
+    .eq('project_id', id)
+    .eq('groupe_id', membership.groupe_id)
+    .in('statut', ['soumise', 'brouillon', 'validee']);
+
+  // Si aucune éval liée au groupe, chercher une éval globale (sans groupe_id)
+  let evaluations = evalsGroupe ?? [];
+  if (evaluations.length === 0) {
+    const { data: evalsGlobales } = await supabaseAdmin
+      .from('evaluations')
+      .select('note, commentaire, statut, notes_criteres, created_at')
+      .eq('project_id', id)
+      .is('groupe_id', null)
+      .in('statut', ['soumise', 'brouillon', 'validee']);
+    evaluations = evalsGlobales ?? [];
+  }
+
+  // Moyenne de tous les groupes (pour comparer)
+  const { data: toutesEvals } = await supabaseAdmin
+    .from('evaluations')
+    .select('note')
+    .eq('project_id', id)
+    .in('statut', ['soumise', 'brouillon', 'validee']);
+
+  const moyenneClasse = toutesEvals?.length
+    ? Math.round((toutesEvals.reduce((s, e) => s + Number(e.note), 0) / toutesEvals.length) * 100) / 100
+    : null;
+
+  return res.json({
+    groupe: {
+      ...groupe,
+      membres: membresAvecNoms,
+      taches: tasks ?? [],
+      evaluation: evaluations?.[0] ?? null,
+      moyenne_classe: moyenneClasse,
+      nb_groupes_evalues: toutesEvals?.length ?? 0,
+    }
+  });
 }
 
 // ─── TRACKING ÉLÉMENTS NON CONSULTÉS ─────────────────────────────────────────

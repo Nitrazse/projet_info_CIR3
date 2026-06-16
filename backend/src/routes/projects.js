@@ -67,6 +67,9 @@ router.post('/:id/groupes', requireRole(ROLES.ENCADRANT), projectsController.cre
 // DELETE /api/projects/:id/groupes/:groupeId    — supprime un groupe (ENCADRANT)
 router.delete('/:id/groupes/:groupeId', requireRole(ROLES.ENCADRANT), projectsController.deleteGroupe);
 
+// GET /api/projects/:id/my-groupe — groupe de l'étudiant connecté
+router.get('/:id/my-groupe', projectsController.getMyGroupe);
+
 // ─── TRACKING ────────────────────────────────────────────────────────────────
 
 // GET    /api/projects/:id/unseen               — éléments non consultés depuis la dernière visite (ENCADRANT)

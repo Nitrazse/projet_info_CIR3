@@ -10,10 +10,12 @@ function initEval() {
 export default function Evaluation() {
   const { hasRole } = useAuth();
   const canCreate = hasRole('encadrant', 'jury');
+  const isEtudiant = !canCreate;
 
   const [projects, setProjects]       = useState([]);
   const [projectId, setProjectId]     = useState('');
   const [evaluations, setEvaluations] = useState([]);
+  const [monGroupe, setMonGroupe]     = useState(null);
   const [loading, setLoading]         = useState(false);
   const [error, setError]             = useState('');
 
@@ -42,12 +44,26 @@ export default function Evaluation() {
     let alive = true;
     setLoading(true);
     setError('');
-    api.get(`/evaluations?project_id=${projectId}&limit=100`)
-      .then(({ data }) => { if (alive) setEvaluations(data.evaluations ?? []); })
-      .catch(() => { if (alive) setError('Impossible de charger les évaluations.'); })
-      .finally(() => { if (alive) setLoading(false); });
+
+    if (isEtudiant) {
+      api.get(`/projects/${projectId}/my-groupe`)
+        .then(({ data }) => {
+          if (!alive) return;
+          const groupe = data.groupe ?? null;
+          setMonGroupe(groupe);
+          const ev = groupe?.evaluation ? [groupe.evaluation] : [];
+          setEvaluations(ev);
+        })
+        .catch(() => { if (alive) setError('Impossible de charger votre évaluation.'); })
+        .finally(() => { if (alive) setLoading(false); });
+    } else {
+      api.get(`/evaluations?project_id=${projectId}&limit=100`)
+        .then(({ data }) => { if (alive) setEvaluations(data.evaluations ?? []); })
+        .catch(() => { if (alive) setError('Impossible de charger les évaluations.'); })
+        .finally(() => { if (alive) setLoading(false); });
+    }
     return () => { alive = false; };
-  }, [projectId, refresh]);
+  }, [projectId, refresh, isEtudiant]);
 
   function openCreate() {
     setForm(initEval());
