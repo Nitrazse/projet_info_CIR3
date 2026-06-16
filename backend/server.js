@@ -56,7 +56,12 @@ app.use((err, req, res, next) => {
 const httpServer = http.createServer(app);
 initSocket(httpServer);
 
-httpServer.listen(PORT, () => {
+const server = httpServer.listen(PORT, () => {
   console.log(`Serveur démarré sur http://localhost:${PORT}`);
   console.log(`WebSocket (Socket.io) actif sur ws://localhost:${PORT}`);
+});
+
+// Libère le port proprement quand nodemon redémarre
+process.on('SIGTERM', () => {
+  server.close(() => process.exit(0));
 });
