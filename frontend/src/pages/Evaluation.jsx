@@ -46,16 +46,31 @@ export default function Evaluation() {
     setError('');
 
     if (isEtudiant) {
-      api.get(`/projects/${projectId}/my-groupe`)
-        .then(({ data }) => {
-          if (!alive) return;
-          const groupe = data.groupe ?? null;
-          setMonGroupe(groupe);
-          const ev = groupe?.evaluation ? [groupe.evaluation] : [];
-          setEvaluations(ev);
-        })
-        .catch(() => { if (alive) setError('Impossible de charger votre évaluation.'); })
-        .finally(() => { if (alive) setLoading(false); });
+      const fetchWithRetry = (attempts = 3, delay = 1500) => {
+        api.get(`/projects/${projectId}/my-groupe`)
+          .then(({ data }) => {
+            if (!alive) return;
+            const groupe = data.groupe ?? null;
+            // Si groupe est null et qu'il reste des tentatives, retry (backend pas encore prêt)
+            if (!groupe && attempts > 1) {
+              setTimeout(() => fetchWithRetry(attempts - 1, delay), delay);
+              return;
+            }
+            setMonGroupe(groupe);
+            setEvaluations(groupe?.evaluation ? [groupe.evaluation] : []);
+            setLoading(false);
+          })
+          .catch(() => {
+            if (!alive) return;
+            if (attempts > 1) {
+              setTimeout(() => fetchWithRetry(attempts - 1, delay), delay);
+            } else {
+              setError('Impossible de charger votre évaluation.');
+              setLoading(false);
+            }
+          });
+      };
+      fetchWithRetry();
     } else {
       api.get(`/evaluations?project_id=${projectId}&limit=100`)
         .then(({ data }) => { if (alive) setEvaluations(data.evaluations ?? []); })
