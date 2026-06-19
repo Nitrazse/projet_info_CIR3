@@ -70,7 +70,14 @@ const server = httpServer.listen(PORT, () => {
   console.log(`WebSocket (Socket.io) actif sur ws://localhost:${PORT}`);
 });
 
-// Libère le port proprement quand nodemon redémarre
-process.on('SIGTERM', () => {
-  server.close(() => process.exit(0));
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.log(`Port ${PORT} occupé, tentative de libération...`);
+    import('child_process').then(({ execSync }) => {
+      try {
+        execSync(`for /f "tokens=5" %a in ('netstat -aon ^| find ":${PORT}" ^| find "LISTENING"') do taskkill /F /PID %a`, { shell: 'cmd.exe' });
+      } catch {}
+      setTimeout(() => httpServer.listen(PORT), 1000);
+    });
+  }
 });
