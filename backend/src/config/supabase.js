@@ -8,10 +8,24 @@ if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
   throw new Error('Variables SUPABASE_URL et SUPABASE_SERVICE_ROLE_KEY obligatoires dans .env');
 }
 
-// Client admin : contourne les RLS — à utiliser uniquement côté serveur
-export const supabaseAdmin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
-  auth: { autoRefreshToken: false, persistSession: false },
+// Crée toujours un client frais pour éviter les connexions stale
+function makeFreshClient() {
+  return createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
+    auth: { autoRefreshToken: false, persistSession: false },
+    global: { fetch: (...args) => fetch(...args) },
+  });
+}
+
+// Proxy : chaque accès à supabaseAdmin crée un client frais
+export const supabaseAdmin = new Proxy({}, {
+  get(_, prop) {
+    return makeFreshClient()[prop];
+  }
 });
+
+export function createFreshAdmin() {
+  return makeFreshClient();
+}
 
 // Client scoped au JWT de l'utilisateur — respecte les RLS Supabase
 export function createUserClient(token) {

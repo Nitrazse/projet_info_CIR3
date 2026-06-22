@@ -108,8 +108,8 @@ export default function Home() {
 
         <div className="promo__cta-zone">
           <span className="promo__profile-badge">Pour les enseignants</span>
-          <Link to="/register?role=encadrant" className="promo__cta-btn">
-            Espace enseignant
+          <Link to="/login" className="promo__cta-btn">
+            Demander un accès enseignant
           </Link>
           <Link to="/login" className="promo__cta-ghost">
             Déjà un compte ? Se connecter →

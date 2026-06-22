@@ -143,7 +143,7 @@ export async function getDashboard(req, res) {
   const kpis = {
     total_projets: projects.length,
     projets_par_statut: projects.reduce((acc, p) => { acc[p.statut] = (acc[p.statut] ?? 0) + 1; return acc; }, {}),
-    total_etudiants: new Set(allMembers?.filter(m => m.role === 'etudiant').map(m => m.user_id)).size,
+    total_etudiants: new Set(allMembers?.filter(m => ['etudiant', 'team_leader'].includes(m.role)).map(m => m.user_id)).size,
     total_taches: allTasks?.length ?? 0,
     taches_en_retard: allTasks?.filter(t => t.date_echeance && t.date_echeance < today && t.statut !== 'termine').length ?? 0,
     livrables_en_attente: allDeliverables?.filter(d => d.statut === 'soumis').length ?? 0,

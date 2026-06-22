@@ -109,13 +109,31 @@ export async function listEvaluations(req, res) {
     .range(offset, offset + limit - 1);
 
   if (error) return sendError(res, 500, error.message);
-  return res.json({ evaluations: data, total: count, page, limit });
+
+  // Enrichir avec le nom du groupe
+  let evaluationsAvecGroupe = data ?? [];
+  if (evaluationsAvecGroupe.length > 0) {
+    const groupeIds = [...new Set(evaluationsAvecGroupe.map(e => e.groupe_id).filter(Boolean))];
+    if (groupeIds.length > 0) {
+      const { data: groupes } = await supabaseAdmin
+        .from('groupes')
+        .select('id, nom')
+        .in('id', groupeIds);
+      const groupeMap = new Map((groupes ?? []).map(g => [g.id, g.nom]));
+      evaluationsAvecGroupe = evaluationsAvecGroupe.map(e => ({
+        ...e,
+        groupe_nom: e.groupe_id ? groupeMap.get(e.groupe_id) ?? null : null,
+      }));
+    }
+  }
+
+  return res.json({ evaluations: evaluationsAvecGroupe, total: count, page, limit });
 }
 
 // Crée une évaluation en brouillon (ENCADRANT, JURY)
 // notes_criteres = { "Rapport écrit": 15, "Soutenance": 12, ... }
 export async function createEvaluation(req, res) {
-  const { project_id, grille_id, notes_criteres, commentaire } = req.body;
+  const { project_id, groupe_id, grille_id, notes_criteres, commentaire } = req.body;
 
   if (!project_id || !grille_id || !notes_criteres) {
     return sendError(res, 400, 'project_id, grille_id et notes_criteres sont obligatoires');
@@ -140,6 +158,7 @@ export async function createEvaluation(req, res) {
     .from('evaluations')
     .insert({
       project_id,
+      groupe_id: groupe_id ?? null,
       grille_id,
       notes_criteres,
       note,

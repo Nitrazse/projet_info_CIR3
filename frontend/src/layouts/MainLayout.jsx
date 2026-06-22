@@ -95,7 +95,7 @@ export default function MainLayout() {
 
   function handleLogout() {
     logout();
-    navigate('/');
+    window.location.href = '/login'; // rechargement complet pour vider tous les états
   }
 
   return (

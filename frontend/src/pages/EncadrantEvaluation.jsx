@@ -96,6 +96,8 @@ export default function EncadrantEvaluation() {
   const [grilles, setGrilles]       = useState([]);
   const [evaluations, setEvaluations] = useState([]);
   const [projectId, setProjectId]   = useState('');
+  const [groupes, setGroupes]       = useState([]);
+  const [groupeId, setGroupeId]     = useState('');
   const [grilleId, setGrilleId]     = useState('');
   const [grille, setGrille]         = useState(null);
   const [loading, setLoading]       = useState(false);
@@ -129,6 +131,18 @@ export default function EncadrantEvaluation() {
       if (ps.length > 0) setProjectId(String(ps[0].id));
     }).catch(() => {});
   }, []);
+
+  // Charger les groupes quand le projet change
+  useEffect(() => {
+    if (!projectId) { setGroupes([]); setGroupeId(''); return; }
+    api.get(`/projects/${projectId}/groupes`)
+      .then(({ data }) => {
+        const gs = data.groupes ?? [];
+        setGroupes(gs);
+        setGroupeId(gs.length > 0 ? gs[0].id : '');
+      })
+      .catch(() => {});
+  }, [projectId]);
 
   // Charger évaluations du projet
   useEffect(() => {
@@ -178,7 +192,7 @@ export default function EncadrantEvaluation() {
 
   // Sauvegarde brouillon
   async function handleSaveDraft() {
-    if (!projectId || !grilleId) return;
+    if (!projectId || !grilleId || !groupeId) return;
     setSaving(true); setFErr(''); setSaveMsg('');
     try {
       if (evalId) {
@@ -186,6 +200,7 @@ export default function EncadrantEvaluation() {
       } else {
         const { data } = await api.post('/evaluations', {
           project_id: projectId,
+          groupe_id: groupeId,
           grille_id: grilleId,
           notes_criteres: notesCriteres,
           commentaire,
@@ -209,6 +224,7 @@ export default function EncadrantEvaluation() {
       if (!id) {
         const { data } = await api.post('/evaluations', {
           project_id: projectId,
+          groupe_id: groupeId,
           grille_id: grilleId,
           notes_criteres: notesCriteres,
           commentaire,
@@ -278,6 +294,25 @@ export default function EncadrantEvaluation() {
             {projects.map(p => <option key={p.id} value={p.id}>{p.nom}</option>)}
           </select>
         </div>
+
+        {projectId && groupes.length > 0 && (
+          <div className="fld">
+            <label className="fld__label" htmlFor="ee-groupe">Groupe à évaluer</label>
+            <select
+              id="ee-groupe"
+              className="fld__input tasks-select"
+              value={groupeId}
+              onChange={e => { setGroupeId(e.target.value); setEvalId(null); setSaveMsg(''); }}
+            >
+              <option value="">-- Sélectionner un groupe --</option>
+              {groupes.map(g => (
+                <option key={g.id} value={g.id}>
+                  {g.nom} ({g.membres?.length ?? 0} étudiant{(g.membres?.length ?? 0) > 1 ? 's' : ''})
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {projectId && (
           <div className="fld">
@@ -412,9 +447,14 @@ export default function EncadrantEvaluation() {
                         <span className="eval-note__max">/20</span>
                       </div>
                       <div className="eval-card__body">
-                        <span className={`dash-badge dash-badge--${ev.statut === 'soumise' ? 'green' : 'grey'}`}>
-                          {ev.statut === 'soumise' ? 'Soumise' : 'Brouillon'}
-                        </span>
+                        <div style={{display:'flex',gap:'0.5rem',flexWrap:'wrap',marginBottom:'0.25rem'}}>
+                          <span className={`dash-badge dash-badge--${ev.statut === 'soumise' ? 'green' : 'grey'}`}>
+                            {ev.statut === 'soumise' ? 'Soumise' : 'Brouillon'}
+                          </span>
+                          {ev.groupe_nom && (
+                            <span className="dash-badge dash-badge--blue">👥 {ev.groupe_nom}</span>
+                          )}
+                        </div>
                         {ev.commentaire && (
                           <p className="eval-card__comment"
                             dangerouslySetInnerHTML={{ __html: renderMarkdown(ev.commentaire) }}

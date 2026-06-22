@@ -70,12 +70,16 @@ function ProjetSection({ projet }) {
   async function toggle() {
     if (!open && !loaded) {
       setLoading(true);
-      try {
-        const { data } = await api.get(`/projects/${projet.id}/groupes`);
-        setGroupes(data.groupes ?? []);
-        setLoaded(true);
-      } catch { /* ignore */ }
-      finally { setLoading(false); }
+      for (let attempt = 1; attempt <= 5; attempt++) {
+        try {
+          const { data } = await api.get(`/projects/${projet.id}/groupes`);
+          const g = data.groupes ?? [];
+          if (g.length > 0) { setGroupes(g); setLoaded(true); break; }
+        } catch { /* ignore */ }
+        if (attempt < 5) await new Promise(r => setTimeout(r, 800));
+      }
+      setLoaded(true);
+      setLoading(false);
     }
     setOpen(o => !o);
   }

@@ -36,6 +36,26 @@ app.use(cors({
   credentials: true,
 }));
 app.use(express.json());
+app.use((req, res, next) => {
+  res.set('Cache-Control', 'no-store');
+  next();
+});
+
+// Log toutes les requêtes entrantes
+app.use((req, res, next) => {
+  console.log(`[REQ] ${req.method} ${req.path}`);
+  next();
+});
+
+// Bloque les requêtes tant que Supabase n'est pas prêt
+let supabaseReady = false;
+app.use((req, res, next) => {
+  if (!supabaseReady && req.path !== '/api/health') {
+    console.log(`[503] Supabase pas prêt pour ${req.path}`);
+    return res.status(503).json({ error: 'Serveur en cours de démarrage, réessayez dans un instant.' });
+  }
+  next();
+});
 
 // --- Routes REST ---
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
@@ -65,34 +85,43 @@ app.use((err, req, res, next) => {
 const httpServer = http.createServer(app);
 initSocket(httpServer);
 
-// Warm-up Supabase AVANT d'écouter les requêtes
-async function startServer() {
-  try {
-    const { supabaseAdmin } = await import('./src/config/supabase.js');
-    await supabaseAdmin.from('projects').select('id').limit(1);
-    console.log('✅ Connexion Supabase prête');
+const { supabaseAdmin } = await import('./src/config/supabase.js');
 
-    // Keepalive : ping toutes les 30s pour garder la connexion active
-    setInterval(async () => {
-      await supabaseAdmin.from('projects').select('id').limit(1);
-    }, 30000);
+async function warmup() {
+  try {
+    await supabaseAdmin.from('projects').select('id').limit(1);
+    supabaseReady = true;
+    console.log('✅ Connexion Supabase prête');
   } catch {
     console.log('⚠️  Warm-up Supabase échoué');
+    supabaseReady = true; // on laisse passer quand même
   }
+}
+
+async function startServer() {
+  await warmup();
+
+  // Keepalive toutes les 30s
+  setInterval(() => supabaseAdmin.from('projects').select('id').limit(1), 30000);
 
   const server = httpServer.listen(PORT, () => {
     console.log(`Serveur démarré sur http://localhost:${PORT}`);
   });
 
-  server.on('error', (err) => {
+  server.on('error', async (err) => {
     if (err.code === 'EADDRINUSE') {
-      console.log(`Port ${PORT} occupé, tentative de libération...`);
-      import('child_process').then(({ execSync }) => {
-        try {
-          execSync(`for /f "tokens=5" %a in ('netstat -aon ^| find ":${PORT}" ^| find "LISTENING"') do taskkill /F /PID %a`, { shell: 'cmd.exe' });
-        } catch {}
-        setTimeout(() => httpServer.listen(PORT), 1000);
-      });
+      console.log(`Port ${PORT} occupé, libération...`);
+      try {
+        const { execSync } = await import('child_process');
+        execSync(`for /f "tokens=5" %a in ('netstat -aon ^| find ":${PORT}" ^| find "LISTENING"') do taskkill /F /PID %a`, { shell: 'cmd.exe' });
+      } catch {}
+      // Warm-up à nouveau après libération du port
+      setTimeout(async () => {
+        await warmup();
+        httpServer.listen(PORT, () => {
+          console.log(`Serveur démarré sur http://localhost:${PORT}`);
+        });
+      }, 1000);
     }
   });
 }

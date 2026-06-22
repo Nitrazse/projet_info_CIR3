@@ -47,7 +47,7 @@ export default function Dashboard() {
       try {
         const [pRes, tRes, nRes] = await Promise.all([
           api.get('/projects?limit=100'),
-          api.get('/tasks?limit=100'),
+          api.get(`/tasks?limit=100&assignee_id=${user.id}`),
           api.get('/notifications?limit=10'),
         ]);
         const projs = pRes.data.projects ?? [];

@@ -1,4 +1,4 @@
-import { supabaseAdmin } from '../config/supabase.js';
+import { supabaseAdmin, createFreshAdmin } from '../config/supabase.js';
 import { sendError, getPagination } from '../utils/index.js';
 import { createNotification } from './notifications.js';
 
@@ -402,29 +402,31 @@ export async function listGroupes(req, res) {
 
   let groupes, error;
 
-  // Retry jusqu'à 3 fois si Supabase retourne vide (connexion pas encore stable)
-  for (let attempt = 1; attempt <= 3; attempt++) {
-    ({ data: groupes, error } = await supabaseAdmin
+  // Retry avec client standard puis clients frais si vide
+  let activeClient = supabaseAdmin;
+  const clientsToTry = [supabaseAdmin, createFreshAdmin(), createFreshAdmin()];
+  for (const client of clientsToTry) {
+    ({ data: groupes, error } = await client
       .from('groupes')
       .select('*')
       .eq('project_id', id)
       .order('created_at'));
 
     if (error) return sendError(res, 500, error.message);
-    if (groupes?.length > 0) break;
-    if (attempt < 3) await new Promise(r => setTimeout(r, 500));
+    if (groupes?.length > 0) { activeClient = client; break; }
+    await new Promise(r => setTimeout(r, 300));
   }
 
   if (!groupes?.length) return res.json({ groupes: [] });
 
   const groupeIds = groupes.map(g => g.id);
-  const { data: members } = await supabaseAdmin
+  const { data: members } = await activeClient
     .from('project_members')
     .select('*')
     .in('groupe_id', groupeIds);
 
   // Récupère les noms depuis auth.users
-  const { data: { users } } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 });
+  const { data: { users } } = await activeClient.auth.admin.listUsers({ perPage: 1000 });
   const userMap = new Map(users.map(u => [u.id, {
     nom:   u.user_metadata?.nom ?? u.email,
     email: u.email,

@@ -114,13 +114,10 @@ function Step3({ groupes, onChange }) {
       .finally(() => setLoading(false));
   }, []);
 
-  // Tous les membres déjà assignés à n'importe quel groupe
-  const tousAssignes = groupes.flatMap(g => g.membres.map(m => m.user_id));
-
+  // Un étudiant peut être dans plusieurs groupes
   const filtered = etudiants.filter(e =>
-    !tousAssignes.includes(e.id) &&
-    (e.nom?.toLowerCase().includes(search.toLowerCase()) ||
-     e.email?.toLowerCase().includes(search.toLowerCase()))
+    e.nom?.toLowerCase().includes(search.toLowerCase()) ||
+    e.email?.toLowerCase().includes(search.toLowerCase())
   );
 
   function addGroupe() {
