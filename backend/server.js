@@ -65,28 +65,31 @@ app.use((err, req, res, next) => {
 const httpServer = http.createServer(app);
 initSocket(httpServer);
 
-const server = httpServer.listen(PORT, async () => {
-  console.log(`Serveur démarré sur http://localhost:${PORT}`);
-  console.log(`WebSocket (Socket.io) actif sur ws://localhost:${PORT}`);
-
-  // Warm-up Supabase : on fait une petite requête pour initialiser la connexion
+// Warm-up Supabase AVANT d'écouter les requêtes
+async function startServer() {
   try {
     const { supabaseAdmin } = await import('./src/config/supabase.js');
     await supabaseAdmin.from('projects').select('id').limit(1);
     console.log('✅ Connexion Supabase prête');
   } catch {
-    console.log('⚠️  Warm-up Supabase échoué (normal si pas de .env)');
+    console.log('⚠️  Warm-up Supabase échoué');
   }
-});
 
-server.on('error', (err) => {
-  if (err.code === 'EADDRINUSE') {
-    console.log(`Port ${PORT} occupé, tentative de libération...`);
-    import('child_process').then(({ execSync }) => {
-      try {
-        execSync(`for /f "tokens=5" %a in ('netstat -aon ^| find ":${PORT}" ^| find "LISTENING"') do taskkill /F /PID %a`, { shell: 'cmd.exe' });
-      } catch {}
-      setTimeout(() => httpServer.listen(PORT), 1000);
-    });
-  }
-});
+  const server = httpServer.listen(PORT, () => {
+    console.log(`Serveur démarré sur http://localhost:${PORT}`);
+  });
+
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.log(`Port ${PORT} occupé, tentative de libération...`);
+      import('child_process').then(({ execSync }) => {
+        try {
+          execSync(`for /f "tokens=5" %a in ('netstat -aon ^| find ":${PORT}" ^| find "LISTENING"') do taskkill /F /PID %a`, { shell: 'cmd.exe' });
+        } catch {}
+        setTimeout(() => httpServer.listen(PORT), 1000);
+      });
+    }
+  });
+}
+
+startServer();
