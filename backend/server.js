@@ -65,9 +65,18 @@ app.use((err, req, res, next) => {
 const httpServer = http.createServer(app);
 initSocket(httpServer);
 
-const server = httpServer.listen(PORT, () => {
+const server = httpServer.listen(PORT, async () => {
   console.log(`Serveur démarré sur http://localhost:${PORT}`);
   console.log(`WebSocket (Socket.io) actif sur ws://localhost:${PORT}`);
+
+  // Warm-up Supabase : on fait une petite requête pour initialiser la connexion
+  try {
+    const { supabaseAdmin } = await import('./src/config/supabase.js');
+    await supabaseAdmin.from('projects').select('id').limit(1);
+    console.log('✅ Connexion Supabase prête');
+  } catch {
+    console.log('⚠️  Warm-up Supabase échoué (normal si pas de .env)');
+  }
 });
 
 server.on('error', (err) => {
