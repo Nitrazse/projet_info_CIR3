@@ -399,15 +399,23 @@ export async function getEtudiantsDisponibles(req, res) {
 // GET /api/projects/:id/groupes — liste les groupes d'un projet avec leurs membres
 export async function listGroupes(req, res) {
   const { id } = req.params;
-  const { data: groupes, error } = await supabaseAdmin
-    .from('groupes')
-    .select('*')
-    .eq('project_id', id)
-    .order('created_at');
 
-  if (error) return sendError(res, 500, error.message);
+  let groupes, error;
 
-  if (!groupes.length) return res.json({ groupes: [] });
+  // Retry jusqu'à 3 fois si Supabase retourne vide (connexion pas encore stable)
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    ({ data: groupes, error } = await supabaseAdmin
+      .from('groupes')
+      .select('*')
+      .eq('project_id', id)
+      .order('created_at'));
+
+    if (error) return sendError(res, 500, error.message);
+    if (groupes?.length > 0) break;
+    if (attempt < 3) await new Promise(r => setTimeout(r, 500));
+  }
+
+  if (!groupes?.length) return res.json({ groupes: [] });
 
   const groupeIds = groupes.map(g => g.id);
   const { data: members } = await supabaseAdmin
@@ -488,13 +496,18 @@ export async function getMyGroupe(req, res) {
   const { id } = req.params;
   const userId = req.user.id;
 
-  // Trouver le groupe de l'étudiant dans ce projet
-  const { data: membership } = await supabaseAdmin
-    .from('project_members')
-    .select('groupe_id, role')
-    .eq('project_id', id)
-    .eq('user_id', userId)
-    .single();
+  // Trouver le groupe de l'étudiant dans ce projet (retry si Supabase pas encore stable)
+  let membership = null;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    const { data } = await supabaseAdmin
+      .from('project_members')
+      .select('groupe_id, role')
+      .eq('project_id', id)
+      .eq('user_id', userId)
+      .single();
+    if (data?.groupe_id) { membership = data; break; }
+    if (attempt < 3) await new Promise(r => setTimeout(r, 500));
+  }
 
   if (!membership?.groupe_id) return res.json({ groupe: null });
 
