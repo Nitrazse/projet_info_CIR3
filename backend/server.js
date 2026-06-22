@@ -71,6 +71,11 @@ async function startServer() {
     const { supabaseAdmin } = await import('./src/config/supabase.js');
     await supabaseAdmin.from('projects').select('id').limit(1);
     console.log('✅ Connexion Supabase prête');
+
+    // Keepalive : ping toutes les 30s pour garder la connexion active
+    setInterval(async () => {
+      await supabaseAdmin.from('projects').select('id').limit(1);
+    }, 30000);
   } catch {
     console.log('⚠️  Warm-up Supabase échoué');
   }
