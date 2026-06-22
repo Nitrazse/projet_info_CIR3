@@ -19,6 +19,7 @@ export default function Tasks() {
   const { hasRole } = useAuth();
   const canCreate = hasRole('encadrant', 'team_leader');
   const canDelete = hasRole('encadrant');
+  const isEtudiant = !hasRole('encadrant', 'jury');
 
   const [searchParams] = useSearchParams();
   const initialProject = searchParams.get('project') ?? '';
@@ -54,12 +55,32 @@ export default function Tasks() {
     let alive = true;
     setLoading(true);
     setError('');
-    api.get(`/tasks?project_id=${projectId}&limit=200`)
-      .then(({ data }) => { if (alive) setTasks(data.tasks ?? []); })
-      .catch(() => { if (alive) setError('Impossible de charger les tâches.'); })
-      .finally(() => { if (alive) setLoading(false); });
+
+    if (isEtudiant) {
+      // Étudiant : ne charge que les tâches de son groupe
+      api.get(`/projects/${projectId}/my-groupe`)
+        .then(({ data }) => {
+          if (!alive) return;
+          const groupe = data.groupe;
+          if (!groupe) { setTasks([]); setLoading(false); return; }
+          const memberIds = (groupe.membres ?? []).map(m => m.user_id);
+          return api.get(`/tasks?project_id=${projectId}&limit=200`)
+            .then(({ data: td }) => {
+              if (!alive) return;
+              const allTasks = td.tasks ?? [];
+              setTasks(allTasks.filter(t => memberIds.includes(t.assignee_id)));
+            });
+        })
+        .catch(() => { if (alive) setError('Impossible de charger les tâches.'); })
+        .finally(() => { if (alive) setLoading(false); });
+    } else {
+      api.get(`/tasks?project_id=${projectId}&limit=200`)
+        .then(({ data }) => { if (alive) setTasks(data.tasks ?? []); })
+        .catch(() => { if (alive) setError('Impossible de charger les tâches.'); })
+        .finally(() => { if (alive) setLoading(false); });
+    }
     return () => { alive = false; };
-  }, [projectId, refresh]);
+  }, [projectId, refresh, isEtudiant]);
 
   const projetCloture = ['cloture', 'soutenu'].includes(projects.find(p => String(p.id) === String(projectId))?.statut);
 
